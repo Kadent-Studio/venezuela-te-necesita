@@ -96,7 +96,9 @@ export const postgisExtension = Prisma.defineExtension({
       },
 
       /**
-       * Lista paginada con filtros y orden por distancia (círculo de radio fijo).
+       * Lista paginada con filtros dentro de un círculo de radio fijo.
+       * Ordena por fecha (createdAt DESC, id DESC) para la paginación por cursor;
+       * el radio solo filtra, no ordena por distancia.
        */
       async findByRadius(
         params: FindByRadiusParams,

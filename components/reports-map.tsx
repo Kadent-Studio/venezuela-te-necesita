@@ -48,9 +48,6 @@ export function ReportsMap() {
   const reduceMotion = usePrefersReducedMotion();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  if (reports.length > 0 && !reports.some((r) => r.id === selectedId)) {
-    setSelectedId(reports[0].id);
-  }
 
   useEffect(() => {
     let aborted = false;
@@ -87,7 +84,13 @@ export function ReportsMap() {
     });
   }, [query, reports, filters]);
 
-  const selected = (reports ?? []).find((r) => r.id === selectedId) ?? null;
+  // Mantiene la selección dentro de lo visible: si el punto elegido se filtra
+  // o aún no hay selección, cae sobre el primero de la lista filtrada.
+  if (filtered.length > 0 && !filtered.some((r) => r.id === selectedId)) {
+    setSelectedId(filtered[0].id);
+  }
+
+  const selected = filtered.find((r) => r.id === selectedId) ?? null;
 
   function selectReport(id: string) {
     setSelectedId(id);

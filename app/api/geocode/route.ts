@@ -66,8 +66,16 @@ export async function GET(req: NextRequest) {
 
   if (!res.ok) return errorResponse(502, "No se pudo buscar la zona");
 
-  const data = (await res.json()) as NominatimResult[];
-  const items = data
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    return errorResponse(502, "No se pudo buscar la zona");
+  }
+  // Nominatim puede responder 200 con un objeto de error en vez de un array.
+  if (!Array.isArray(data)) return NextResponse.json({ items: [] });
+
+  const items = (data as NominatimResult[])
     .map((item) => {
       const latitude = Number(item.lat);
       const longitude = Number(item.lon);

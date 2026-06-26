@@ -1,6 +1,7 @@
 // Tiempo relativo en español ("hace 5 min", "hace 2 h", "hace 3 d").
 export function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return "";
   const secs = Math.max(0, Math.round((Date.now() - then) / 1000));
 
   if (secs < 60) return "ahora";
