@@ -48,9 +48,9 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Unidos Venezuela",
     locale: "es_VE",
-    title: "Unidos Venezuela — Solicita y coordina ayuda tras el sismo",
+    title: "Unidos Venezuela — Solicita y coordina ayuda",
     description:
-      "Reporta y ubica puntos que necesitan ayuda tras el terremoto del 24 de junio de 2026. Coordinación ciudadana por urgencia y accesibilidad.",
+      "Reporta y ubica puntos que necesitan ayuda tras el sismo del 24-J. Coordinación ciudadana por urgencia.",
   },
   twitter: {
     card: "summary_large_image",

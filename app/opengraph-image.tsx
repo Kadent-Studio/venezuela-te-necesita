@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { getBaseUrl } from "@/lib/url";
 
 export const runtime = "edge";
 export const alt =
@@ -7,6 +8,8 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default function Image() {
+  const domain = getBaseUrl().replace(/^https?:\/\//, "");
+
   return new ImageResponse(
     (
       <div
@@ -126,18 +129,32 @@ export default function Image() {
           Reporta dónde se necesita ayuda tras el sismo del 24 de junio de 2026
         </div>
 
-        {/* Footer con dominio */}
+        {/* Footer con CTA */}
         <div
           style={{
-            fontSize: 20,
-            fontWeight: 600,
-            letterSpacing: "0.04em",
-            opacity: 0.7,
             position: "absolute",
             bottom: 48,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            fontSize: 22,
+            fontWeight: 600,
+            opacity: 0.85,
           }}
         >
-          unidosvenezuela.org
+          <span>Reportá ahora</span>
+          <span style={{ fontSize: 28, fontWeight: 700 }}>→</span>
+          <span
+            style={{
+              marginLeft: 24,
+              paddingLeft: 24,
+              borderLeft: "2px solid rgba(250,247,242,0.3)",
+              opacity: 0.65,
+              fontWeight: 500,
+            }}
+          >
+            {domain}
+          </span>
         </div>
 
         {/* Barra de urgencia inferior */}
