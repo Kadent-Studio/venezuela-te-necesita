@@ -1,0 +1,415 @@
+"use client";
+
+import { useState } from "react";
+import { upload } from "@vercel/blob/client";
+import type { NeedType, Urgency, AccessStatus } from "@prisma/client";
+import {
+  needTypeOrder,
+  needTypeLabel,
+  urgencyOrder,
+  urgencyLabel,
+  urgencyColor,
+  accessOrder,
+  accessLabel,
+} from "@/lib/labels";
+import {
+  Field,
+  Input,
+  Textarea,
+  ToggleChip,
+  Segmented,
+  CheckRow,
+} from "@/components/ui/form";
+import { IconLocate, IconCamera, IconCheck, IconX } from "@/components/ui/icons";
+
+type Errors = Record<string, string>;
+
+export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) {
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [geoMsg, setGeoMsg] = useState<string | null>(null);
+
+  const [address, setAddress] = useState("");
+  const [needTypes, setNeedTypes] = useState<NeedType[]>([]);
+  const [urgency, setUrgency] = useState<Urgency | null>(null);
+  const [description, setDescription] = useState("");
+
+  const [peopleCount, setPeopleCount] = useState("1");
+  const [hasInjured, setHasInjured] = useState(false);
+  const [hasChildren, setHasChildren] = useState(false);
+  const [hasElderly, setHasElderly] = useState(false);
+
+  const [access, setAccess] = useState<AccessStatus | null>(null);
+
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoErr, setPhotoErr] = useState<string | null>(null);
+
+  const [contactName, setContactName] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+
+  const [errors, setErrors] = useState<Errors>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [doneId, setDoneId] = useState<string | null>(null);
+
+  const err = (k: string) => errors[k];
+
+  function toggleNeed(n: NeedType) {
+    setNeedTypes((cur) =>
+      cur.includes(n) ? cur.filter((x) => x !== n) : [...cur, n],
+    );
+  }
+
+  function useMyLocation() {
+    setGeoMsg(null);
+    if (!navigator.geolocation) {
+      setGeoMsg("Tu dispositivo no permite ubicación. Escríbela manualmente.");
+      return;
+    }
+    setGeoMsg("Obteniendo ubicación…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude.toFixed(6));
+        setLng(pos.coords.longitude.toFixed(6));
+        setAccuracy(Math.round(pos.coords.accuracy));
+        setGeoMsg(null);
+      },
+      () => setGeoMsg("No se pudo obtener la ubicación. Escríbela manualmente."),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
+
+  async function onPhoto(file: File) {
+    setPhotoErr(null);
+    if (!file.type.startsWith("image/")) {
+      setPhotoErr("El archivo debe ser una imagen.");
+      return;
+    }
+    setPhotoBusy(true);
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/reports/upload",
+      });
+      setPhotoUrl(blob.url);
+    } catch {
+      setPhotoErr("No se pudo subir la foto. Puedes enviar el reporte sin ella.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  function validate(): Errors {
+    const e: Errors = {};
+    const latN = Number(lat);
+    const lngN = Number(lng);
+    if (!lat || Number.isNaN(latN)) e.latitude = "Indica la ubicación";
+    if (!lng || Number.isNaN(lngN)) e.longitude = "Indica la ubicación";
+    if (address.trim().length < 3) e.address = "Indica una referencia del lugar";
+    if (needTypes.length === 0) e.needTypes = "Elige al menos un tipo de ayuda";
+    if (!urgency) e.urgency = "Indica la urgencia";
+    if (!access) e.access = "Indica el estado de acceso";
+    if (contactName.trim().length < 2) e.contactName = "Indica un nombre";
+    if (contactPhone.trim().length < 7) e.contactPhone = "Indica un teléfono";
+    return e;
+  }
+
+  async function onSubmit(ev: React.FormEvent) {
+    ev.preventDefault();
+    setSubmitError(null);
+    const local = validate();
+    setErrors(local);
+    if (Object.keys(local).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          latitude: Number(lat),
+          longitude: Number(lng),
+          accuracyMeters: accuracy ?? undefined,
+          address: address.trim(),
+          needTypes,
+          urgency,
+          description: description.trim() || undefined,
+          peopleCount: Number(peopleCount) || 1,
+          hasInjured,
+          hasChildren,
+          hasElderly,
+          access,
+          photoUrl: photoUrl ?? undefined,
+          contactName: contactName.trim(),
+          contactPhone: contactPhone.trim(),
+        }),
+      });
+
+      if (res.status === 201) {
+        const { id } = await res.json();
+        setDoneId(id);
+        onSuccess?.(id);
+        return;
+      }
+      if (res.status === 400) {
+        const data = await res.json();
+        const fe: Errors = {};
+        for (const [k, v] of Object.entries(
+          (data.fieldErrors ?? {}) as Record<string, string[]>,
+        )) {
+          fe[k] = v[0];
+        }
+        setErrors(fe);
+        setSubmitError("Revisa los campos marcados.");
+        return;
+      }
+      if (res.status === 429) {
+        setSubmitError("Demasiados envíos. Espera un momento e intenta de nuevo.");
+        return;
+      }
+      setSubmitError("No se pudo enviar. Intenta de nuevo en un momento.");
+    } catch {
+      setSubmitError("Sin conexión. Revisa tu red e intenta de nuevo.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (doneId) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <span
+          className="flex size-12 items-center justify-center rounded-full"
+          style={{
+            color: "var(--color-bajo)",
+            background: "color-mix(in srgb, var(--color-bajo) 14%, var(--superficie))",
+          }}
+        >
+          <IconCheck className="size-6" />
+        </span>
+        <h3 className="text-lg font-bold text-ceniza">Solicitud enviada</h3>
+        <p className="max-w-sm text-sm text-ceniza-2">
+          Tu reporte quedó registrado como <strong>sin verificar</strong>. Un
+          coordinador lo revisará y aparecerá en el mapa de ayuda.
+        </p>
+        <p className="font-mono text-xs text-ceniza-3">ID {doneId.slice(0, 8)}</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
+      <Section title="Ubicación">
+        <button
+          type="button"
+          onClick={useMyLocation}
+          className="inline-flex w-fit items-center gap-2 rounded-[var(--radius-input)] border px-3 py-2 text-sm font-semibold text-tierra"
+          style={{ borderColor: "var(--color-tierra)" }}
+        >
+          <IconLocate className="size-4" />
+          Usar mi ubicación
+        </button>
+        {geoMsg && <p className="text-xs text-ceniza-3">{geoMsg}</p>}
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Latitud" error={err("latitude")} required>
+            <Input
+              inputMode="decimal"
+              placeholder="10.6"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              className="font-mono"
+            />
+          </Field>
+          <Field label="Longitud" error={err("longitude")} required>
+            <Input
+              inputMode="decimal"
+              placeholder="-67.0"
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              className="font-mono"
+            />
+          </Field>
+        </div>
+        {accuracy != null && (
+          <p className="text-xs text-ceniza-3">Precisión GPS: ±{accuracy} m</p>
+        )}
+        <Field
+          label="Referencia del lugar"
+          hint="Sector, ciudad, punto de referencia (ej. edificio azul, 3er piso)"
+          error={err("address")}
+          required
+        >
+          <Input
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Catia La Mar, frente a la iglesia"
+          />
+        </Field>
+      </Section>
+
+      <Section title="Necesidad">
+        <Field label="¿Qué se necesita?" error={err("needTypes")} required>
+          <div className="flex flex-wrap gap-2">
+            {needTypeOrder.map((n) => (
+              <ToggleChip
+                key={n}
+                active={needTypes.includes(n)}
+                onClick={() => toggleNeed(n)}
+              >
+                {needTypeLabel[n]}
+              </ToggleChip>
+            ))}
+          </div>
+        </Field>
+        <Field label="Urgencia" error={err("urgency")} required>
+          <Segmented
+            options={urgencyOrder.map((u) => ({ value: u, label: urgencyLabel[u] }))}
+            value={urgency}
+            onChange={setUrgency}
+            colorFor={(u) => urgencyColor[u]}
+          />
+        </Field>
+        <Field label="Descripción" hint="Opcional">
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Detalles que ayuden a la respuesta…"
+          />
+        </Field>
+      </Section>
+
+      <Section title="Personas afectadas">
+        <Field label="¿Cuántas personas?">
+          <Input
+            type="number"
+            min={1}
+            value={peopleCount}
+            onChange={(e) => setPeopleCount(e.target.value)}
+            className="w-28"
+          />
+        </Field>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <CheckRow checked={hasInjured} onChange={setHasInjured} label="Hay heridos" />
+          <CheckRow checked={hasChildren} onChange={setHasChildren} label="Hay niños" />
+          <CheckRow
+            checked={hasElderly}
+            onChange={setHasElderly}
+            label="Adultos mayores"
+          />
+        </div>
+      </Section>
+
+      <Section title="Acceso a la zona">
+        <Field label="¿Se puede llegar?" error={err("access")} required>
+          <Segmented
+            options={accessOrder.map((a) => ({ value: a, label: accessLabel[a] }))}
+            value={access}
+            onChange={setAccess}
+          />
+        </Field>
+      </Section>
+
+      <Section title="Foto del lugar">
+        <p className="text-xs text-ceniza-3">
+          Opcional. Ayuda a evaluar el daño y la prioridad.
+        </p>
+        {photoUrl ? (
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={photoUrl}
+              alt="Foto adjunta"
+              className="size-16 rounded-[var(--radius-input)] object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => setPhotoUrl(null)}
+              className="inline-flex items-center gap-1 text-sm font-medium text-ceniza-2"
+            >
+              <IconX className="size-4" /> Quitar
+            </button>
+          </div>
+        ) : (
+          <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-[var(--radius-input)] border bg-polvo px-3 py-2 text-sm font-semibold text-ceniza-2">
+            <IconCamera className="size-4 text-ceniza-3" />
+            {photoBusy ? "Subiendo…" : "Adjuntar foto"}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={photoBusy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onPhoto(f);
+              }}
+            />
+          </label>
+        )}
+        {photoErr && (
+          <p className="text-xs font-medium" style={{ color: "var(--color-critico)" }}>
+            {photoErr}
+          </p>
+        )}
+      </Section>
+
+      <Section title="Contacto">
+        <p className="text-xs text-ceniza-3">
+          Privado. Solo lo ven los coordinadores; nunca aparece en el mapa público.
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Nombre" error={err("contactName")} required>
+            <Input
+              value={contactName}
+              onChange={(e) => setContactName(e.target.value)}
+              autoComplete="name"
+            />
+          </Field>
+          <Field label="Teléfono" error={err("contactPhone")} required>
+            <Input
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              inputMode="tel"
+              placeholder="+58 412 1234567"
+              autoComplete="tel"
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {submitError && (
+        <p
+          className="rounded-[var(--radius-input)] border px-3 py-2 text-sm font-medium"
+          style={{
+            color: "var(--color-critico)",
+            borderColor: "var(--color-critico)",
+            background: "color-mix(in srgb, var(--color-critico) 8%, var(--superficie))",
+          }}
+        >
+          {submitError}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={submitting}
+        className="sticky bottom-0 h-12 rounded-[var(--radius-input)] text-base font-bold text-[var(--superficie)] disabled:opacity-60"
+        style={{ background: "var(--color-tierra)" }}
+      >
+        {submitting ? "Enviando…" : "Enviar solicitud de ayuda"}
+      </button>
+    </form>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="text-xs font-bold uppercase tracking-wide text-ceniza-3">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}

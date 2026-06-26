@@ -8,13 +8,9 @@ export type PublicReport = Omit<Report, (typeof SENSITIVE_KEYS)[number]>;
 // Convierte un Report en su forma pública, omitiendo el contacto y el ipHash.
 // Toda salida pública (lista, mapa, nearby, detalle) DEBE pasar por aquí.
 export function toPublicReport(report: Report): PublicReport {
-  const {
-    contactName: _contactName,
-    contactPhone: _contactPhone,
-    ipHash: _ipHash,
-    ...rest
-  } = report;
-  return rest;
+  const copy: Record<string, unknown> = { ...report };
+  for (const key of SENSITIVE_KEYS) delete copy[key];
+  return copy as PublicReport;
 }
 
 export function toPublicReports(reports: Report[]): PublicReport[] {

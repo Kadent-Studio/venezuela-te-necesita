@@ -1,26 +1,103 @@
 @import "tailwindcss";
 
+/*
+  Sistema de diseño — Venezuela te necesita
+  Mundo: terremoto, triaje de campo, concreto/polvo, solidaridad.
+  Modo claro primario: se usa a plena luz, en la calle, bajo estrés.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Superficies cálidas (hueso / polvo / papel) */
+  --hueso: #faf7f2; /* fondo página */
+  --polvo: #f1ebe1; /* superficie hundida (inputs, zonas) */
+  --superficie: #fffdf9; /* tarjetas */
+
+  /* Texto: ceniza cálida, 4 niveles */
+  --ceniza: #1f1b17; /* primario */
+  --ceniza-2: #574f45; /* secundario */
+  --ceniza-3: #8a7f72; /* terciario / metadatos */
+  --ceniza-4: #b3a899; /* muted / placeholder */
+
+  /* Bordes: ceniza a baja opacidad, progresión por importancia */
+  --borde: rgba(31, 27, 23, 0.12);
+  --borde-suave: rgba(31, 27, 23, 0.07);
+  --borde-fuerte: rgba(31, 27, 23, 0.24);
+
+  /* Marca: tierra ocre venezolana */
+  --tierra: #b9531f;
+  --tierra-tinta: #8f3f17;
+
+  /* Triaje (semántica real de urgencia) */
+  --triage-critico: #cf2230;
+  --triage-alto: #e07c0a;
+  --triage-medio: #2566a6;
+  --triage-bajo: #2f8a6b;
+
+  /* Confianza: sello de verificado */
+  --verificado: #0e7490;
+
+  /* Acceso de la zona */
+  --acceso-ok: #2f8a6b;
+  --acceso-bloqueado: #cf2230;
+  --acceso-especial: #e07c0a;
+  --acceso-desconocido: #8a7f72;
+
+  /* Foco accesible */
+  --foco: rgba(185, 83, 31, 0.55);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-hueso: var(--hueso);
+  --color-polvo: var(--polvo);
+  --color-superficie: var(--superficie);
+
+  --color-ceniza: var(--ceniza);
+  --color-ceniza-2: var(--ceniza-2);
+  --color-ceniza-3: var(--ceniza-3);
+  --color-ceniza-4: var(--ceniza-4);
+
+  --color-borde: var(--borde);
+  --color-borde-suave: var(--borde-suave);
+  --color-borde-fuerte: var(--borde-fuerte);
+
+  --color-tierra: var(--tierra);
+  --color-tierra-tinta: var(--tierra-tinta);
+
+  --color-critico: var(--triage-critico);
+  --color-alto: var(--triage-alto);
+  --color-medio: var(--triage-medio);
+  --color-bajo: var(--triage-bajo);
+  --color-verificado: var(--verificado);
+
+  --color-acceso-ok: var(--acceso-ok);
+  --color-acceso-bloqueado: var(--acceso-bloqueado);
+  --color-acceso-especial: var(--acceso-especial);
+  --color-acceso-desconocido: var(--acceso-desconocido);
+
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --radius-input: 7px;
+  --radius-card: 12px;
+  --radius-modal: 18px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--borde);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--hueso);
+  color: var(--ceniza);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(185, 83, 31, 0.18);
+}
+
+/* Foco visible y consistente en todo control interactivo */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
 }
