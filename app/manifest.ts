@@ -27,7 +27,6 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     categories: ["emergency", "social", "maps"],
-    iarc_rating_id: "no-age-rating",
     related_applications: [],
     prefer_related_applications: false,
   };
