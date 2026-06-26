@@ -1,5 +1,4 @@
 // Esquema Prisma — vzla-te-necesita
-// El modelo Report y sus enums se añaden en la Fase 1.
 // Prisma 7: las URLs de conexión viven en prisma.config.ts; el cliente usa
 // un driver adapter (Neon) configurado en lib/prisma.ts.
 
@@ -9,4 +8,92 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+model Report {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Ubicación
+  latitude       Float
+  longitude      Float
+  accuracyMeters Int?
+  address        String // sector, ciudad, punto de referencia (obligatorio)
+
+  // Necesidad
+  needTypes   NeedType[]
+  urgency     Urgency
+  description String?
+
+  // Personas afectadas
+  peopleCount Int     @default(1)
+  hasInjured  Boolean @default(false)
+  hasChildren Boolean @default(false)
+  hasElderly  Boolean @default(false)
+
+  // Accesibilidad de la zona
+  access AccessStatus
+
+  // Evidencia (pública)
+  photoUrl String? // foto del lugar (Vercel Blob, opcional)
+
+  // Contacto (PRIVADO — nunca en respuestas públicas)
+  contactName  String
+  contactPhone String
+
+  // Verificación (eje 1)
+  verified   Boolean   @default(false)
+  verifiedBy String? // Clerk userId
+  verifiedAt DateTime?
+
+  // Etapa de atención (eje 2)
+  stage     Stage   @default(NUEVO)
+  handledBy String? // Clerk userId del último que actuó
+
+  // Motivo de descarte (eje 3, solo si stage = DESCARTADO)
+  discardReason DiscardReason?
+
+  // Abuso
+  ipHash String? // HMAC de IP, nunca la IP cruda
+
+  @@index([stage])
+  @@index([urgency])
+  @@index([createdAt, id]) // paginación por cursor
+}
+
+enum NeedType {
+  RESCATE
+  MEDICO
+  AGUA
+  COMIDA
+  REFUGIO
+  OTRO
+}
+
+enum Urgency {
+  CRITICA
+  ALTA
+  MEDIA
+  BAJA
+}
+
+enum AccessStatus {
+  TRANSITABLE
+  BLOQUEADA
+  VEHICULO_ESPECIAL
+  DESCONOCIDA
+}
+
+enum Stage {
+  NUEVO
+  EN_ATENCION
+  RESUELTO
+  DESCARTADO
+}
+
+enum DiscardReason {
+  DUPLICADO
+  FALSO
+  FUERA_DE_ALCANCE
 }
