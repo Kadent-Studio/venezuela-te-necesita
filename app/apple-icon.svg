@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <defs>
+    <linearGradient id="vtn-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="50%" stop-color="#cf2230"/>
+      <stop offset="50%" stop-color="#e07c0a"/>
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="36" fill="url(#vtn-bg)"/>
+  <text x="90" y="117" font-size="82" letter-spacing="-4"
+        font-family="'Public Sans', system-ui, sans-serif" font-weight="800"
+        text-anchor="middle" fill="#faf7f2">VTN</text>
+</svg>

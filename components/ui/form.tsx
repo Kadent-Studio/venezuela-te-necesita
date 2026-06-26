@@ -36,8 +36,10 @@ export function Field({
   );
 }
 
+// h-11 (44px) en móvil: tap target accesible bajo estrés / dedos con polvo.
+// sm:h-10 vuelve a la densidad de escritorio.
 const baseInput =
-  "w-full rounded-[var(--radius-input)] border bg-polvo px-3 py-2 text-sm text-ceniza placeholder:text-ceniza-4";
+  "w-full rounded-[var(--radius-input)] border bg-polvo px-3.5 text-base text-ceniza placeholder:text-ceniza-4 h-11 sm:h-10 sm:text-sm";
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${baseInput} ${props.className ?? ""}`} />;
@@ -47,7 +49,7 @@ export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       {...props}
-      className={`${baseInput} min-h-20 resize-y ${props.className ?? ""}`}
+      className={`w-full rounded-[var(--radius-input)] border bg-polvo px-3.5 py-2.5 text-base text-ceniza placeholder:text-ceniza-4 sm:text-sm min-h-24 resize-y ${props.className ?? ""}`}
     />
   );
 }
@@ -66,7 +68,7 @@ export function ToggleChip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className="rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors"
+      className="inline-flex h-11 items-center rounded-full border px-4 text-sm font-semibold transition-colors active:scale-[0.98] sm:h-9 sm:px-3.5"
       style={
         active
           ? {
@@ -94,7 +96,7 @@ export function Segmented<T extends string>({
   colorFor?: (v: T) => string;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
       {options.map((o) => {
         const active = o.value === value;
         const accent = colorFor?.(o.value) ?? "var(--color-tierra)";
@@ -104,7 +106,7 @@ export function Segmented<T extends string>({
             type="button"
             aria-pressed={active}
             onClick={() => onChange(o.value)}
-            className="rounded-[var(--radius-input)] border px-3 py-1.5 text-sm font-semibold transition-colors"
+            className="inline-flex h-11 items-center justify-center rounded-[var(--radius-input)] border px-3.5 text-sm font-semibold transition-colors active:scale-[0.98] sm:h-9"
             style={
               active
                 ? {
@@ -133,12 +135,12 @@ export function CheckRow({
   label: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-center gap-2.5 rounded-[var(--radius-input)] border bg-polvo px-3 py-2">
+    <label className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[var(--radius-input)] border bg-polvo px-3.5 py-2.5 sm:min-h-11 sm:py-2">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="size-4 accent-[var(--color-tierra)]"
+        className="size-5 accent-[var(--color-tierra)] sm:size-4"
       />
       <span className="text-sm font-medium text-ceniza-2">{label}</span>
     </label>

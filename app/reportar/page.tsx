@@ -14,9 +14,12 @@ export default function ReportarPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8 sm:px-6">
-        <div className="mb-6 flex flex-col gap-1">
-          <Link href="/" className="w-fit text-sm font-semibold text-ceniza-3">
+      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-5 flex flex-col gap-1 sm:mb-6">
+          <Link
+            href="/"
+            className="inline-flex h-9 w-fit items-center text-sm font-semibold text-ceniza-3 hover:text-ceniza"
+          >
             ← Volver
           </Link>
           <h1 className="text-2xl font-extrabold tracking-tight text-ceniza">
@@ -26,7 +29,7 @@ export default function ReportarPage() {
             Indica dónde y qué se necesita. Toma un minuto.
           </p>
         </div>
-        <div className="rounded-[var(--radius-card)] border bg-superficie p-5">
+        <div className="rounded-[var(--radius-card)] border bg-superficie p-4 sm:p-5">
           <ReportForm />
         </div>
       </main>

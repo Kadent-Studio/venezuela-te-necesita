@@ -350,14 +350,19 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="sticky bottom-0 h-12 rounded-[var(--radius-input)] text-base font-bold text-[var(--superficie)] disabled:opacity-60"
-        style={{ background: "var(--color-tierra)" }}
+      <div
+        className="sticky bottom-0 mt-2 -mb-4 border-t bg-superficie/95 py-3 pb-safe backdrop-blur sm:-mb-5"
+        style={{ borderColor: "var(--borde)" }}
       >
-        {submitting ? "Enviando…" : "Enviar solicitud de ayuda"}
-      </button>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-input)] text-base font-bold text-[var(--superficie)] shadow-sm transition-transform active:scale-[0.99] disabled:opacity-60 sm:h-12"
+          style={{ background: "var(--color-tierra)" }}
+        >
+          {submitting ? "Enviando…" : "Enviar solicitud de ayuda"}
+        </button>
+      </div>
     </form>
   );
 }

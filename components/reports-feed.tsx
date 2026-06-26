@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PublicReportDTO, ReportListResponse } from "@/lib/types";
 import { ReportCard } from "@/components/report-card";
+import type { ReportFilters } from "@/components/reports-filters";
 
 const PAGE = 20;
 
-export function ReportsFeed() {
+export function ReportsFeed({ filters }: { filters?: ReportFilters }) {
   const [items, setItems] = useState<PublicReportDTO[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -14,27 +15,38 @@ export function ReportsFeed() {
   const [error, setError] = useState(false);
   const [started, setStarted] = useState(false);
 
+  // Serializa filtros para usarlos como dependencia estable de efectos.
+  const filterKey = filters
+    ? `${filters.urgency ?? ""}|${filters.needType ?? ""}|${filters.access ?? ""}`
+    : "";
+
   // No hace setState síncrono: la primera carga usa el estado inicial loading=true;
   // las cargas posteriores marcan loading desde sus manejadores (botón / observer).
-  const load = useCallback(async (cur: string | null) => {
-    try {
-      const url = new URL("/api/reports", window.location.origin);
-      url.searchParams.set("limit", String(PAGE));
-      if (cur) url.searchParams.set("cursor", cur);
-      const res = await fetch(url);
-      if (!res.ok) throw new Error();
-      const data = (await res.json()) as ReportListResponse;
-      setItems((prev) => (cur ? [...prev, ...data.items] : data.items));
-      setCursor(data.nextCursor);
-      setDone(!data.nextCursor);
-      setError(false);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-      setStarted(true);
-    }
-  }, []);
+  const load = useCallback(
+    async (cur: string | null) => {
+      try {
+        const url = new URL("/api/reports", window.location.origin);
+        url.searchParams.set("limit", String(PAGE));
+        if (cur) url.searchParams.set("cursor", cur);
+        if (filters?.urgency) url.searchParams.set("urgency", filters.urgency);
+        if (filters?.needType) url.searchParams.set("needType", filters.needType);
+        if (filters?.access) url.searchParams.set("access", filters.access);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
+        const data = (await res.json()) as ReportListResponse;
+        setItems((prev) => (cur ? [...prev, ...data.items] : data.items));
+        setCursor(data.nextCursor);
+        setDone(!data.nextCursor);
+        setError(false);
+      } catch {
+        setError(true);
+      } finally {
+        setLoading(false);
+        setStarted(true);
+      }
+    },
+    [filters],
+  );
 
   const loadMore = useCallback(
     (cur: string) => {
@@ -52,11 +64,13 @@ export function ReportsFeed() {
   }, [load]);
 
   useEffect(() => {
-    // Carga inicial: el setState ocurre en el callback de la respuesta fetch
-    // (sistema externo), no de forma síncrona en el cuerpo del efecto.
+    // Carga inicial y recarga al cambiar filtros: el setState ocurre en el
+    // callback de la respuesta fetch (sistema externo), no de forma síncrona en
+    // el cuerpo del efecto. filterKey resume los filtros para no disparar el
+    // efecto por identidad de objeto.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load(null);
-  }, [load]);
+  }, [load, filterKey]);
 
   // Scroll infinito.
   const sentinel = useRef<HTMLDivElement>(null);
@@ -86,17 +100,29 @@ export function ReportsFeed() {
   }
 
   if (started && items.length === 0) {
+    const filtered =
+      filters &&
+      (filters.urgency || filters.needType || filters.access) !== null &&
+      (filters.urgency || filters.needType || filters.access) !== undefined;
     return (
       <Notice
-        title="Aún no hay solicitudes"
-        body="Cuando alguien reporte un punto que necesita ayuda, aparecerá aquí."
+        title={
+          filtered
+            ? "Ningún punto coincide con los filtros"
+            : "Aún no hay solicitudes"
+        }
+        body={
+          filtered
+            ? "Prueba a quitar alguno o limpiarlos todos."
+            : "Cuando alguien reporte un punto que necesita ayuda, aparecerá aquí."
+        }
       />
     );
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-col gap-7">
+      <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 lg:gap-7">
         {items.map((r) => (
           <ReportCard key={r.id} report={r} />
         ))}
@@ -127,11 +153,11 @@ export function ReportsFeed() {
 
 function FeedSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 lg:gap-7">
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="h-52 animate-pulse rounded-[var(--radius-card)] border bg-superficie"
+          className="h-80 animate-pulse rounded-[var(--radius-card)] border bg-superficie"
         />
       ))}
     </div>

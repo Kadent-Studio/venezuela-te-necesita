@@ -131,7 +131,7 @@ export function LocationPicker({
           type="button"
           onClick={search}
           disabled={busy}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-[var(--radius-input)] border px-3 text-sm font-semibold text-ceniza-2 disabled:opacity-60 sm:mt-[29px] sm:w-28"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-[var(--radius-input)] border px-3 text-sm font-semibold text-ceniza-2 disabled:opacity-60 sm:mt-[29px] sm:h-10 sm:w-28"
         >
           <IconSearch className="size-4" />
           Buscar
@@ -142,7 +142,7 @@ export function LocationPicker({
         type="button"
         onClick={useMyLocation}
         disabled={busy}
-        className="inline-flex w-fit items-center gap-2 rounded-[var(--radius-input)] border px-3 py-2 text-sm font-semibold text-tierra disabled:opacity-60"
+        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[var(--radius-input)] border px-3 text-sm font-semibold text-tierra disabled:opacity-60 sm:h-10 sm:w-fit"
         style={{ borderColor: "var(--color-tierra)" }}
       >
         <IconLocate className="size-4" />
@@ -168,7 +168,7 @@ export function LocationPicker({
       )}
 
       <div
-        className="h-[280px] overflow-hidden rounded-[var(--radius-input)] border bg-polvo"
+        className="h-[300px] overflow-hidden rounded-[var(--radius-input)] border bg-polvo sm:h-[280px]"
         aria-label="Mapa para elegir ubicación"
       >
         <Map value={value} onChange={(point) => pick(point, null)} />

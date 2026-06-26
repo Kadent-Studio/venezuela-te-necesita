@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /*
   Sistema de diseño — Venezuela te necesita
@@ -79,6 +80,30 @@
   --radius-input: 7px;
   --radius-card: 12px;
   --radius-modal: 18px;
+
+  /* Puente con shadcn/ui: mapea sus tokens semánticos al sistema del proyecto.
+     Permite usar bg-popover, text-muted-foreground, etc. sin abandonar la paleta
+     hueso/ceniza/tierra. */
+  --color-background: var(--hueso);
+  --color-foreground: var(--ceniza);
+  --color-card: var(--superficie);
+  --color-card-foreground: var(--ceniza);
+  --color-popover: var(--superficie);
+  --color-popover-foreground: var(--ceniza);
+  --color-primary: var(--ceniza);
+  --color-primary-foreground: var(--superficie);
+  --color-secondary: var(--polvo);
+  --color-secondary-foreground: var(--ceniza);
+  --color-muted: var(--polvo);
+  --color-muted-foreground: var(--ceniza-3);
+  --color-accent: var(--polvo);
+  --color-accent-foreground: var(--ceniza);
+  --color-destructive: var(--triage-critico);
+  --color-destructive-foreground: var(--superficie);
+  --color-border: var(--borde);
+  --color-input: var(--borde-fuerte);
+  --color-ring: var(--foco);
+  --radius: 7px;
 }
 
 * {
@@ -90,10 +115,42 @@ body {
   color: var(--ceniza);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
   background: rgba(185, 83, 31, 0.18);
+}
+
+/* Prevención de auto-zoom en iOS Safari al enfocar campos.
+   iOS hace zoom si font-size < 16px. Forzamos 16px sólo en mobile
+   sin alterar la tipografía visual del resto del sistema. */
+@media (max-width: 639.98px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Sin highlight gris fantasma al tocar elementos interactivos */
+button,
+a,
+[role="button"],
+label {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Helpers de safe-area: notch y home-indicator iOS / barra Android */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+.mb-safe {
+  margin-bottom: max(env(safe-area-inset-bottom), 0px);
 }
 
 /* Foco visible y consistente en todo control interactivo */
