@@ -137,7 +137,7 @@ export function ReportsMapLeaflet({
       maxBounds={VENEZUELA_BOUNDS}
       maxBoundsViscosity={0.75}
       scrollWheelZoom
-      className="h-full w-full"
+      className="relative z-0 h-full w-full"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

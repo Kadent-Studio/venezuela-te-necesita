@@ -41,7 +41,7 @@ export function SolicitarAyudaButton({
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center sm:items-start sm:py-10"
+          className="fixed inset-0 z-[3000] flex items-end justify-center sm:items-start sm:py-10"
           role="dialog"
           aria-modal="true"
           aria-label="Solicitar ayuda"
