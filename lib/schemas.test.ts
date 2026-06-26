@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { NeedType, Urgency, AccessStatus, Stage } from "@prisma/client";
-import { createReportSchema, updateReportSchema } from "./schemas";
+import { createReportSchema, listQuerySchema, updateReportSchema } from "./schemas";
 
 const validBase = {
   latitude: 10.6,
@@ -56,5 +56,32 @@ describe("updateReportSchema — coherencia de ejes de estado", () => {
   it("acepta discardReason con stage DESCARTADO", () => {
     const r = updateReportSchema.safeParse({ stage: Stage.DESCARTADO, discardReason: "DUPLICADO" });
     expect(r.success).toBe(true);
+  });
+});
+
+describe("listQuerySchema — filtro espacial", () => {
+  it("acepta centro y radio para buscar por zona", () => {
+    const r = listQuerySchema.parse({
+      lat: "10.5967",
+      lng: "-66.9562",
+      radius: "5000",
+    });
+    expect(r.lat).toBe(10.5967);
+    expect(r.lng).toBe(-66.9562);
+    expect(r.radius).toBe(5000);
+  });
+
+  it("exige lat y lng juntos", () => {
+    const r = listQuerySchema.safeParse({ lat: "10.5967" });
+    expect(r.success).toBe(false);
+  });
+
+  it("limita radios demasiado grandes", () => {
+    const r = listQuerySchema.safeParse({
+      lat: "10.5967",
+      lng: "-66.9562",
+      radius: "1000000",
+    });
+    expect(r.success).toBe(false);
   });
 });

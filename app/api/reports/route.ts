@@ -1,9 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { Prisma, Stage } from "@prisma/client";
+import { Prisma, Stage, type Report } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { createReportSchema, listQuerySchema } from "@/lib/schemas";
+import { createReportSchema, listQuerySchema, type ListQuery } from "@/lib/schemas";
 import { toPublicReports } from "@/lib/serialize";
 import { zodErrorResponse, errorResponse } from "@/lib/api";
+import {
+  enumFilterSql,
+  needTypeSql,
+  pointSql,
+  publicStageSql,
+} from "@/lib/postgis";
 
 export const runtime = "nodejs";
 
@@ -14,7 +20,11 @@ export async function GET(req: NextRequest) {
   );
   if (!parsed.success) return zodErrorResponse(parsed.error);
 
-  const { needType, urgency, access, stage, cursor, limit } = parsed.data;
+  const { needType, urgency, access, stage, cursor, limit, lat, lng } = parsed.data;
+
+  if (lat != null && lng != null) {
+    return listReportsByRadius(parsed.data);
+  }
 
   // Público: nunca se muestran los reportes descartados.
   const where: Prisma.ReportWhereInput = {
@@ -30,6 +40,54 @@ export async function GET(req: NextRequest) {
     take: limit + 1, // +1 para saber si hay página siguiente
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
+
+  const hasMore = rows.length > limit;
+  const items = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+  return NextResponse.json({ items: toPublicReports(items), nextCursor });
+}
+
+async function listReportsByRadius(query: ListQuery) {
+  const { needType, urgency, access, stage, cursor, limit, lat, lng, radius } = query;
+  if (lat == null || lng == null) {
+    return errorResponse(400, "Indica lat y lng para filtrar por zona");
+  }
+
+  const cursorReport = cursor
+    ? await prisma.report.findUnique({
+        where: { id: cursor },
+        select: { id: true, createdAt: true },
+      })
+    : null;
+
+  const cursorSql = cursorReport
+    ? Prisma.sql`AND ("createdAt", "id") < (${cursorReport.createdAt}, ${cursorReport.id})`
+    : Prisma.empty;
+  const point = pointSql(lat, lng);
+  const publicStage =
+    stage && stage !== Stage.DESCARTADO ? publicStageSql(stage) : publicStageSql();
+
+  const rows = await prisma.$queryRaw<Report[]>`
+    SELECT
+      "id", "createdAt", "updatedAt",
+      "latitude", "longitude", "accuracyMeters", "address",
+      "needTypes", "urgency", "description",
+      "peopleCount", "hasInjured", "hasChildren", "hasElderly",
+      "access", "photoUrl",
+      "contactName", "contactPhone",
+      "verified", "verifiedBy", "verifiedAt",
+      "stage", "handledBy", "discardReason", "ipHash"
+    FROM "Report"
+    WHERE ${publicStage}
+      ${needTypeSql(needType)}
+      ${enumFilterSql("urgency", "Urgency", urgency)}
+      ${enumFilterSql("access", "AccessStatus", access)}
+      AND ST_DWithin("location", ${point}, ${radius})
+      ${cursorSql}
+    ORDER BY "createdAt" DESC, "id" DESC
+    LIMIT ${limit + 1}
+  `;
 
   const hasMore = rows.length > limit;
   const items = hasMore ? rows.slice(0, limit) : rows;

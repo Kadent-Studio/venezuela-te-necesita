@@ -63,14 +63,22 @@ export const createReportSchema = z.object({
 export type CreateReportInput = z.infer<typeof createReportSchema>;
 
 // Filtros y paginación por cursor (GET /api/reports público).
-export const listQuerySchema = z.object({
-  needType: z.nativeEnum(NeedType).optional(),
-  urgency: z.nativeEnum(Urgency).optional(),
-  access: z.nativeEnum(AccessStatus).optional(),
-  stage: z.nativeEnum(Stage).optional(),
-  cursor: z.string().cuid().optional(),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-});
+export const listQuerySchema = z
+  .object({
+    needType: z.nativeEnum(NeedType).optional(),
+    urgency: z.nativeEnum(Urgency).optional(),
+    access: z.nativeEnum(AccessStatus).optional(),
+    stage: z.nativeEnum(Stage).optional(),
+    cursor: z.string().cuid().optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+    lat: z.coerce.number().pipe(latitude).optional(),
+    lng: z.coerce.number().pipe(longitude).optional(),
+    radius: z.coerce.number().min(10).max(50000).default(5000),
+  })
+  .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), {
+    message: "Indica lat y lng para filtrar por zona",
+    path: ["lat"],
+  });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
 

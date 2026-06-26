@@ -9,7 +9,7 @@ type Point = {
   longitude: number;
 };
 
-const VENEZUELA_CENTER: LatLngExpression = [7.1, -66.2];
+const MAIQUETIA_CENTER: LatLngExpression = [10.5967, -66.9562];
 const VENEZUELA_BOUNDS: L.LatLngBoundsExpression = [
   [0.6, -73.4],
   [12.3, -59.8],
@@ -59,7 +59,7 @@ export function LocationPickerMap({
 
   return (
     <MapContainer
-      center={position ?? VENEZUELA_CENTER}
+      center={position ?? MAIQUETIA_CENTER}
       zoom={position ? 14 : 5}
       minZoom={5}
       maxBounds={VENEZUELA_BOUNDS}

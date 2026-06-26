@@ -26,8 +26,13 @@ import { LocationPicker } from "@/components/location-picker";
 type Errors = Record<string, string>;
 type Point = { latitude: number; longitude: number };
 
+const MAIQUETIA_LOCATION: Point = {
+  latitude: 10.5967,
+  longitude: -66.9562,
+};
+
 export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) {
-  const [location, setLocation] = useState<Point | null>(null);
+  const [location, setLocation] = useState<Point | null>(MAIQUETIA_LOCATION);
   const [accuracy, setAccuracy] = useState<number | null>(null);
 
   const [address, setAddress] = useState("");

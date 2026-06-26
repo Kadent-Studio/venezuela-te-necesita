@@ -42,7 +42,9 @@ export function LocationPicker({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<GeocodeResult[]>([]);
   const [status, setStatus] = useState<string | null>(
-    "Busca una zona o toca el mapa para colocar el pin.",
+    value
+      ? "El pin empieza en Maiquetia. Muevelo hasta el punto real."
+      : "Busca una zona o toca el mapa para colocar el pin.",
   );
   const [busy, setBusy] = useState(false);
 
