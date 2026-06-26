@@ -40,6 +40,7 @@ repositorio.
 - **Clerk** (Vercel Marketplace) para autenticación y autorización de coordinadores
   (ver "Autorización de coordinadores").
 - **Vercel BotID** + rate-limit por hash de IP como anti-spam.
+- **Vercel Blob** (almacenamiento público) para la foto del lugar adjunta a cada reporte.
 - **Zod** para validación compartida cliente/API.
 - **Nominatim** (OSM) solo para buscador de zona (1 petición por búsqueda manual).
 
@@ -55,6 +56,7 @@ app/
     reports/route.ts        → POST (crear) · GET (lista pública sanitizada, paginada)
     reports/[id]/route.ts   → GET público (1 punto sanitizado)
     reports/nearby/route.ts → GET público (sugeridor de duplicados por proximidad)
+    reports/upload/route.ts → POST público (token de subida de foto a Vercel Blob)
     admin/reports/route.ts        → GET completo (incl. contacto) [Clerk]
     admin/reports/[id]/route.ts   → PATCH (verified / stage / discardReason) [Clerk]
 lib/
@@ -102,6 +104,9 @@ model Report {
 
   // Accesibilidad de la zona
   access        AccessStatus
+
+  // Evidencia (pública)
+  photoUrl      String?          // foto del lugar (Vercel Blob, opcional)
 
   // Contacto (PRIVADO — nunca en respuestas públicas)
   contactName   String
@@ -159,6 +164,7 @@ pérdida de información.
 | `GET` | `/api/reports` | Público | Lista sanitizada, paginación por cursor (`?cursor=&limit=20`), filtros `?needType=&urgency=&access=&stage=`. Excluye `DESCARTADO`. |
 | `GET` | `/api/reports/[id]` | Público | Un punto sanitizado. |
 | `GET` | `/api/reports/nearby` | Público | `?lat=&lng=&radius=` (def. 200 m). Sugeridor de duplicados, sanitizado. |
+| `POST` | `/api/reports/upload` | Público | Emite token de *client upload* a Vercel Blob (solo `image/*`, límite de tamaño). |
 | `GET` | `/api/admin/reports` | Clerk | Datos completos (incl. contacto). |
 | `PATCH` | `/api/admin/reports/[id]` | Clerk | Actualiza `verified`, `stage`, `discardReason`; fija `verifiedBy/At` y `handledBy`. |
 
@@ -185,12 +191,12 @@ futuro se quisieran cuentas públicas, habría que introducir un modelo de roles
 ## Páginas y componentes
 
 ### `/` — Principal (listado + CTA)
-- Listado completo de solicitudes con **carga progresiva** (scroll infinito + "Cargar
-  más") sobre paginación por cursor.
-- **CTA "Solicitar ayuda"** abre un **modal** con el formulario completo (`LocationPicker`
-  + campos). Mobile-first.
-- Cada item: `ReportCard` con necesidad, urgencia, personas, accesibilidad, referencia,
-  badges de etapa y verificación. Sin teléfono.
+- Listado completo de solicitudes en **grid** con **carga progresiva** (scroll infinito +
+  "Cargar más") sobre paginación por cursor. Diseño con la skill `interface-design`.
+- **CTA "Solicitar ayuda"** abre un **modal** con el formulario completo (`LocationPicker`,
+  campos y **carga de foto**). Mobile-first.
+- Cada item: `ReportCard` con **foto del lugar** (si existe), necesidad, urgencia,
+  personas, accesibilidad, referencia, badges de etapa y verificación. Sin teléfono.
 
 ### `/reportar` — Respaldo del formulario
 - Renderiza el mismo formulario que el modal, para enlaces compartibles y clientes sin JS.
@@ -236,6 +242,20 @@ futuro se quisieran cuentas públicas, habría que introducir un modelo de roles
   (a afinar con tráfico real). El `ipHash` se calcula con **HMAC-SHA256 + secreto de
   servidor** (no un hash plano), para que no se pueda revertir a la IP original.
 
+## Fotos del lugar
+
+- Cada reporte puede adjuntar **una foto del lugar** (opcional — no bloquea el envío en una
+  emergencia). Sirve para evaluar daño, accesibilidad y prioridad.
+- **Almacenamiento:** Vercel Blob (público). La URL pública se guarda en `photoUrl`.
+- **Subida:** *client upload* con `@vercel/blob/client`; un Route Handler
+  (`/api/reports/upload`) emite el token de subida. La foto se sube antes de enviar el
+  formulario y su URL viaja en el `POST /api/reports`.
+- **Validación:** solo imágenes (`image/*`), tamaño máximo (p. ej. 8 MB); se recomienda
+  comprimir/redimensionar en cliente antes de subir para baja conectividad.
+- **Privacidad/moderación:** la foto es pública (es del lugar). Si contuviera personas, los
+  coordinadores pueden retirarla desde `/admin` (poner `photoUrl = null`). No se exige
+  rostro/identificación.
+
 ## Manejo de errores
 
 - API: `400` (validación, errores por campo), `403` (BotID), `429` (rate-limit),
@@ -251,6 +271,8 @@ futuro se quisieran cuentas públicas, habría que introducir un modelo de roles
   `/api/reports/nearby` nunca incluyen `contactPhone`/`contactName`.
 - **API:** `POST` valida y crea; `GET` excluye campos sensibles y pagina por cursor;
   `PATCH` exige sesión Clerk; `nearby` filtra por radio.
+- **Fotos:** `/api/reports/upload` solo acepta `image/*` dentro del límite de tamaño;
+  un coordinador puede retirar una foto (`photoUrl = null`) vía `PATCH`.
 - **Autorización admin:** `/api/admin/*` rechaza peticiones sin sesión Clerk
   (`401`), garantizando que los datos de contacto no son accesibles sin autenticar.
 
