@@ -15,6 +15,7 @@ import {
   IconElder,
   IconPin,
   IconCamera,
+  IconNavigation,
 } from "@/components/ui/icons";
 
 // Icono dominante por tipo de necesidad para el placeholder.
@@ -143,12 +144,40 @@ function PhotoPlaceholder({
   );
 }
 
-export function ReportCard({ report: r }: { report: PublicReportDTO }) {
+export function ReportCard({
+  report: r,
+  onSelect,
+}: {
+  report: PublicReportDTO;
+  onSelect?: (id: string) => void;
+}) {
   const color = urgencyColor[r.urgency];
   const primary = r.needTypes[0] ?? "OTRO";
+  const selectable = Boolean(onSelect);
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[var(--radius-card)] border bg-superficie transition-shadow hover:shadow-[0_8px_22px_rgba(31,27,23,0.08)]">
+    <article
+      className={
+        "group flex flex-col overflow-hidden rounded-[var(--radius-card)] border bg-superficie transition-shadow hover:shadow-[0_8px_22px_rgba(31,27,23,0.08)]" +
+        (selectable
+          ? " cursor-pointer focus-within:ring-2 focus-within:ring-[var(--color-tierra)]"
+          : "")
+      }
+      onClick={selectable ? () => onSelect?.(r.id) : undefined}
+      onKeyDown={
+        selectable
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect?.(r.id);
+              }
+            }
+          : undefined
+      }
+      role={selectable ? "button" : undefined}
+      tabIndex={selectable ? 0 : undefined}
+      aria-label={selectable ? `Ver detalles de ${needTypeLabel[primary]}` : undefined}
+    >
       <div className="relative">
         {r.photoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -255,9 +284,17 @@ export function ReportCard({ report: r }: { report: PublicReportDTO }) {
 
         <footer className="mt-auto flex items-center justify-between gap-2 border-t pt-3">
           <StageBadge stage={r.stage} />
-          <span className="font-mono text-[11px] tabular-nums text-ceniza-4">
-            {r.latitude.toFixed(4)}, {r.longitude.toFixed(4)}
-          </span>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}&travelmode=driving`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 rounded-[var(--radius-input)] border px-2.5 py-1 text-xs font-semibold text-ceniza-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ceniza)_6%,var(--superficie))] hover:text-ceniza"
+            aria-label="Abrir ruta en Google Maps"
+          >
+            <IconNavigation className="size-3.5" />
+            Cómo llegar
+          </a>
         </footer>
       </div>
     </article>

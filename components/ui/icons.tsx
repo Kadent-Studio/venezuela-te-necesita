@@ -65,6 +65,12 @@ export const IconPin = (p: SVGProps<SVGSVGElement>) => (
   </Base>
 );
 
+export const IconNavigation = (p: SVGProps<SVGSVGElement>) => (
+  <Base {...p}>
+    <path d="M3 11 21 3l-8 18-2-8z" />
+  </Base>
+);
+
 export const IconCamera = (p: SVGProps<SVGSVGElement>) => (
   <Base {...p}>
     <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" />

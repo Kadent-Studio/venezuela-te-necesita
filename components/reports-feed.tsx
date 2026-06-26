@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useReportsFeed } from "@/lib/hooks";
 import { ReportCard } from "@/components/report-card";
+import { ReportDetailsSheet } from "@/components/report-details-sheet";
 import type { ReportFilters } from "@/components/reports-filters";
 
 export function ReportsFeed({ filters }: { filters?: ReportFilters }) {
@@ -29,6 +30,12 @@ export function ReportsFeed({ filters }: { filters?: ReportFilters }) {
   const items = data?.pages.flatMap((p) => p.items) ?? [];
   const hasFilters = Boolean(
     filters && (filters.urgency || filters.needType || filters.access),
+  );
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedReport = useMemo(
+    () => items.find((r) => r.id === selectedId) ?? null,
+    [items, selectedId],
   );
 
   // Scroll infinito.
@@ -79,9 +86,17 @@ export function ReportsFeed({ filters }: { filters?: ReportFilters }) {
     <div className="flex flex-col gap-7">
       <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 lg:gap-7">
         {items.map((r) => (
-          <ReportCard key={r.id} report={r} />
+          <ReportCard key={r.id} report={r} onSelect={setSelectedId} />
         ))}
       </div>
+
+      <ReportDetailsSheet
+        report={selectedReport}
+        open={selectedId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedId(null);
+        }}
+      />
 
       {hasNextPage && (
         <div ref={sentinel} className="flex justify-center py-2">

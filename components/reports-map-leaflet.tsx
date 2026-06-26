@@ -7,6 +7,7 @@ import type { PublicReportDTO } from "@/lib/types";
 import { urgencyColor, urgencyLabel } from "@/lib/labels";
 import { timeAgo } from "@/lib/time";
 import { NeedChips } from "@/components/ui/badges";
+import { IconNavigation } from "@/components/ui/icons";
 
 const MAIQUETIA_CENTER: LatLngExpression = [10.5967, -66.9562];
 const VENEZUELA_BOUNDS: L.LatLngBoundsExpression = [
@@ -110,6 +111,16 @@ function ReportMarker({
             {report.peopleCount}{" "}
             {report.peopleCount === 1 ? "persona afectada" : "personas afectadas"}
           </p>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${report.latitude},${report.longitude}&travelmode=driving`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-input)] border px-2.5 py-1.5 text-xs font-semibold text-ceniza-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ceniza)_6%,var(--superficie))] hover:text-ceniza"
+            aria-label="Abrir ruta en Google Maps"
+          >
+            <IconNavigation className="size-3.5" />
+            Cómo llegar en Google Maps
+          </a>
         </div>
       </Popup>
     </Marker>
