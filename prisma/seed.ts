@@ -1,4 +1,5 @@
 import { config as loadEnv } from "dotenv";
+import { faker } from "@faker-js/faker/locale/es";
 import { PrismaClient } from "@prisma/client/index";
 import type {
   NeedType,
@@ -27,7 +28,7 @@ const prisma = new PrismaClient({
 });
 
 // ---------------------------------------------------------------------------
-// Datos semilla realistas para Venezuela
+// Semilla con faker — Venezuela
 // ---------------------------------------------------------------------------
 
 const NEED_TYPES: NeedType[] = [
@@ -52,140 +53,84 @@ const DISCARD_REASONS: DiscardReason[] = [
   "FUERA_DE_ALCANCE",
 ];
 
-const NAMES = [
-  "María Rodríguez",
-  "José Hernández",
-  "Ana Martínez",
-  "Carlos González",
-  "Rosa Pérez",
-  "Luis García",
-  "Carmen López",
-  "Jorge Sánchez",
-  "Marta Díaz",
-  "Pedro Ramírez",
-  "Elena Torres",
-  "Ricardo Castillo",
-  "Sofía Medina",
-  "Andrés Rojas",
-  "Laura Moreno",
-  "Fernando Álvarez",
-  "Valentina Silva",
-  "Diego Contreras",
-  "Isabel Romero",
-  "Alejandro Mendoza",
-  "Gabriela Ortiz",
-  "Manuel Guerrero",
-  "Paola Vargas",
-  "Sergio Herrera",
-  "Adriana Peña",
-  "Héctor Castro",
-  "Daniela Delgado",
-  "Óscar Paredes",
-  "Katherine Rivas",
-  "Miguel Ángel Flores",
-  "Natalia Suárez",
-  "Rubén Acosta",
-  "Andreína Núñez",
-  "Francisco Figueroa",
-  "Stephanie Córdova",
-  "Antonio León",
-  "Fabiola Rangel",
-  "Jesús Marcano",
-  "Lorena Campos",
-  "Enrique Molina",
-];
-
-const PHONE_PREFIXES = ["0412", "0414", "0416", "0424", "0426"];
-
-const SECTORS: [string, number, number][] = [
-  // [sector + referencia, lat, lng]
-  ["Caracas, Dtto. Capital — El Silencio", 10.506, -66.915],
-  ["Caracas — Petare", 10.476, -66.803],
-  ["Caracas — Catia", 10.514, -66.94],
-  ["Caracas — Baruta", 10.433, -66.873],
-  ["Maracaibo, Zulia — Centro", 10.64, -71.63],
-  ["Maracaibo — San Francisco", 10.568, -71.662],
-  ["Valencia, Carabobo — Naguanagua", 10.247, -68.005],
-  ["Valencia — Tocuyito", 10.091, -68.088],
-  ["Barquisimeto, Lara — Centro", 10.063, -69.334],
-  ["Barquisimeto — Cabudare", 10.023, -69.265],
-  ["Ciudad Guayana, Bolívar — Puerto Ordaz", 8.292, -62.712],
-  ["Ciudad Guayana — San Félix", 8.334, -62.716],
-  ["Maturín, Monagas — Centro", 9.747, -63.176],
-  ["Barcelona, Anzoátegui — Centro", 10.133, -64.686],
-  ["Puerto La Cruz, Anzoátegui — Paseo Colón", 10.204, -64.637],
-  ["Maracay, Aragua — Centro", 10.246, -67.596],
-  ["Maracay — Caña de Azúcar", 10.28, -67.634],
-  ["Cumaná, Sucre — Centro", 10.455, -64.17],
-  ["Mérida, Mérida — Centro", 8.598, -71.142],
-  ["Mérida — Ejido", 8.548, -71.238],
-  ["San Cristóbal, Táchira — Centro", 7.767, -72.226],
-  ["San Cristóbal — Táriba", 7.818, -72.226],
-  ["Coro, Falcón — Centro", 11.406, -69.666],
-  ["Acarigua, Portuguesa — Centro", 9.558, -69.196],
-  ["Guanare, Portuguesa — Centro", 9.041, -69.747],
-  ["Barinas, Barinas — Centro", 8.623, -70.209],
-  ["Trujillo, Trujillo — Centro", 9.365, -70.433],
-  ["Valera, Trujillo — Centro", 9.32, -70.607],
-  ["Los Teques, Miranda — Centro", 10.345, -67.037],
-  ["La Guaira, La Guaira — Centro", 10.597, -66.925],
-  ["Porlamar, Nueva Esparta — Centro", 10.959, -63.85],
-  ["Punto Fijo, Falcón — Centro", 11.696, -70.196],
-  ["Ciudad Bolívar, Bolívar — Centro", 8.123, -63.549],
-  ["El Tigre, Anzoátegui — Centro", 8.887, -64.253],
-  ["Calabozo, Guárico — Centro", 8.927, -67.427],
-  ["San Juan de los Morros, Guárico — Centro", 9.913, -67.358],
-  ["Tucupita, Delta Amacuro — Centro", 9.059, -62.05],
-  ["Puerto Ayacucho, Amazonas — Centro", 5.663, -67.626],
-  ["Carora, Lara — Centro", 10.165, -70.082],
-  ["El Tocuyo, Lara — Centro", 9.786, -69.792],
-];
-
-const DESCRIPTIONS = [
-  null,
-  null,
-  "La comunidad no tiene acceso a agua potable desde hace una semana.",
-  "Varias familias perdieron sus viviendas tras las lluvias. Necesitan refugio.",
-  "El sector está incomunicado por derrumbe en la vía principal.",
-  "Hay varios niños con desnutrición aguda en el barrio.",
-  "No hay servicio eléctrico desde hace 10 días, se necesita apoyo.",
-  "Personas mayores atrapadas en el edificio sin poder evacuar.",
-  "La única vía de acceso está bloqueada por escombros.",
-  "Centro de salud local no tiene insumos básicos para atender emergencias.",
-  "Familias enteras durmiendo a la intemperie tras el desalojo.",
-  "La comunidad reporta múltiples casos de dengue en la última semana.",
-  "Deslave afectó varias viviendas. Hay heridos.",
-  "Se necesita transporte para evacuar a 30 personas del sector.",
-  "Filtraciones de aguas negras en la calle principal, riesgo sanitario.",
-  null,
-  null,
-  "Bombona de agua comunal dañada, llevan días sin suministro.",
-  "Incendio forestal se acerca a las viviendas. Se requiere evacuación.",
+// Sectores reales de Venezuela con coordenadas de referencia.
+const SECTORS = [
+  { address: "Caracas, Dtto. Capital — El Silencio", lat: 10.506, lng: -66.915 },
+  { address: "Caracas — Petare", lat: 10.476, lng: -66.803 },
+  { address: "Caracas — Catia", lat: 10.514, lng: -66.94 },
+  { address: "Caracas — Baruta", lat: 10.433, lng: -66.873 },
+  { address: "Maracaibo, Zulia — Centro", lat: 10.64, lng: -71.63 },
+  { address: "Maracaibo — San Francisco", lat: 10.568, lng: -71.662 },
+  { address: "Valencia, Carabobo — Naguanagua", lat: 10.247, lng: -68.005 },
+  { address: "Valencia — Tocuyito", lat: 10.091, lng: -68.088 },
+  { address: "Barquisimeto, Lara — Centro", lat: 10.063, lng: -69.334 },
+  { address: "Barquisimeto — Cabudare", lat: 10.023, lng: -69.265 },
+  { address: "Ciudad Guayana, Bolívar — Puerto Ordaz", lat: 8.292, lng: -62.712 },
+  { address: "Ciudad Guayana — San Félix", lat: 8.334, lng: -62.716 },
+  { address: "Maturín, Monagas — Centro", lat: 9.747, lng: -63.176 },
+  { address: "Barcelona, Anzoátegui — Centro", lat: 10.133, lng: -64.686 },
+  { address: "Puerto La Cruz, Anzoátegui — Paseo Colón", lat: 10.204, lng: -64.637 },
+  { address: "Maracay, Aragua — Centro", lat: 10.246, lng: -67.596 },
+  { address: "Maracay — Caña de Azúcar", lat: 10.28, lng: -67.634 },
+  { address: "Cumaná, Sucre — Centro", lat: 10.455, lng: -64.17 },
+  { address: "Mérida, Mérida — Centro", lat: 8.598, lng: -71.142 },
+  { address: "Mérida — Ejido", lat: 8.548, lng: -71.238 },
+  { address: "San Cristóbal, Táchira — Centro", lat: 7.767, lng: -72.226 },
+  { address: "San Cristóbal — Táriba", lat: 7.818, lng: -72.226 },
+  { address: "Coro, Falcón — Centro", lat: 11.406, lng: -69.666 },
+  { address: "Acarigua, Portuguesa — Centro", lat: 9.558, lng: -69.196 },
+  { address: "Guanare, Portuguesa — Centro", lat: 9.041, lng: -69.747 },
+  { address: "Barinas, Barinas — Centro", lat: 8.623, lng: -70.209 },
+  { address: "Trujillo, Trujillo — Centro", lat: 9.365, lng: -70.433 },
+  { address: "Valera, Trujillo — Centro", lat: 9.32, lng: -70.607 },
+  { address: "Los Teques, Miranda — Centro", lat: 10.345, lng: -67.037 },
+  { address: "La Guaira, La Guaira — Centro", lat: 10.597, lng: -66.925 },
+  { address: "Porlamar, Nueva Esparta — Centro", lat: 10.959, lng: -63.85 },
+  { address: "Punto Fijo, Falcón — Centro", lat: 11.696, lng: -70.196 },
+  { address: "Ciudad Bolívar, Bolívar — Centro", lat: 8.123, lng: -63.549 },
+  { address: "El Tigre, Anzoátegui — Centro", lat: 8.887, lng: -64.253 },
+  { address: "Calabozo, Guárico — Centro", lat: 8.927, lng: -67.427 },
+  { address: "San Juan de los Morros, Guárico — Centro", lat: 9.913, lng: -67.358 },
+  { address: "Tucupita, Delta Amacuro — Centro", lat: 9.059, lng: -62.05 },
+  { address: "Puerto Ayacucho, Amazonas — Centro", lat: 5.663, lng: -67.626 },
+  { address: "Carora, Lara — Centro", lat: 10.165, lng: -70.082 },
+  { address: "El Tocuyo, Lara — Centro", lat: 9.786, lng: -69.792 },
 ];
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Teléfono venezolano
 // ---------------------------------------------------------------------------
 
-function pick<T>(arr: readonly T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]!;
+const VE_PREFIXES = ["0412", "0414", "0416", "0424", "0426"];
+
+function vePhone(): string {
+  return `${faker.helpers.arrayElement(VE_PREFIXES)}-${faker.string.numeric(7)}`;
 }
 
-function pickN<T>(arr: readonly T[], min: number, max: number): T[] {
-  const n = min + Math.floor(Math.random() * (max - min + 1));
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(n, arr.length));
-}
+// ---------------------------------------------------------------------------
+// Descripciones realistas en español
+// ---------------------------------------------------------------------------
 
-function randomPhone(): string {
-  const prefix = pick(PHONE_PREFIXES);
-  const suffix = String(Math.floor(1000000 + Math.random() * 9000000));
-  return `${prefix}-${suffix}`;
-}
-
-function randomDate(start: Date, end: Date): Date {
-  const t = start.getTime() + Math.random() * (end.getTime() - start.getTime());
-  return new Date(t);
+function generateDescription(): string | null {
+  if (!faker.datatype.boolean(0.5)) return null;
+  return faker.helpers.arrayElement([
+    `La comunidad no tiene acceso a agua potable desde hace ${faker.number.int({ min: 3, max: 21 })} días.`,
+    `Varias familias perdieron sus viviendas tras las lluvias. Necesitan ${faker.helpers.arrayElement(["refugio", "alimentos", "ropa", "colchonetas"])}.`,
+    `El sector está incomunicado por ${faker.helpers.arrayElement(["derrumbe", "deslave", "crecida del río"])} en la vía principal.`,
+    `Hay ${faker.number.int({ min: 5, max: 50 })} niños con desnutrición aguda en el barrio.`,
+    `No hay servicio eléctrico desde hace ${faker.number.int({ min: 5, max: 20 })} días, se necesita apoyo.`,
+    `${faker.number.int({ min: 3, max: 15 })} personas mayores atrapadas sin poder evacuar.`,
+    `La única vía de acceso está bloqueada por escombros.`,
+    `Centro de salud no tiene insumos básicos para atender emergencias.`,
+    `Familias enteras durmiendo a la intemperie tras el desalojo.`,
+    `Se reportan ${faker.number.int({ min: 5, max: 40 })} casos de ${faker.helpers.arrayElement(["dengue", "malaria", "cólera", "diarrea aguda", "desnutrición"])} en la última semana.`,
+    `Deslave afectó ${faker.number.int({ min: 5, max: 60 })} viviendas. Hay heridos.`,
+    `Se necesita transporte para evacuar a ${faker.number.int({ min: 10, max: 100 })} personas del sector.`,
+    `Filtraciones de aguas negras en la calle principal, riesgo sanitario crítico.`,
+    `Bombona de agua comunal dañada, llevan ${faker.number.int({ min: 3, max: 15 })} días sin suministro.`,
+    `Incendio forestal se acerca a las viviendas. Se requiere evacuación urgente.`,
+    `${faker.number.int({ min: 10, max: 200 })} familias necesitan ${faker.helpers.arrayElement(["comida", "agua potable", "pañales", "medicinas", "lonas para techo"])} con urgencia.`,
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -197,6 +142,7 @@ async function main() {
 
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  faker.seed(42);
 
   const batchSize = 100;
   let inserted = 0;
@@ -205,7 +151,7 @@ async function main() {
     const data: Array<{
       latitude: number;
       longitude: number;
-      accuracyMeters: number;
+      accuracyMeters: number | null;
       address: string;
       needTypes: NeedType[];
       urgency: Urgency;
@@ -225,36 +171,35 @@ async function main() {
     }> = [];
 
     for (let i = 0; i < batchSize; i++) {
-      const [baseAddress, baseLat, baseLng] = pick(SECTORS);
-      const latOffset = (Math.random() - 0.5) * 0.04;
-      const lngOffset = (Math.random() - 0.5) * 0.04;
+      const sector = faker.helpers.arrayElement(SECTORS);
+      const lat = +(sector.lat + faker.number.float({ min: -0.02, max: 0.02 })).toFixed(6);
+      const lng = +(sector.lng + faker.number.float({ min: -0.02, max: 0.02 })).toFixed(6);
 
-      const createdAt = randomDate(thirtyDaysAgo, now);
-      const updatedAt = randomDate(createdAt, now);
-      const stage = pick(STAGES);
-      const verified = stage !== "NUEVO" && Math.random() < 0.6;
-      const urgency = pick(URGENCIES);
+      const createdAt = faker.date.between({ from: thirtyDaysAgo, to: now });
+      const updatedAt = faker.date.between({ from: createdAt, to: now });
+      const stage = faker.helpers.arrayElement(STAGES);
+      const verified = stage !== "NUEVO" && faker.datatype.boolean(0.6);
 
       data.push({
-        latitude: +(baseLat! + latOffset).toFixed(6),
-        longitude: +(baseLng! + lngOffset).toFixed(6),
-        accuracyMeters: pick([5, 10, 15, 20, 50, 100, null])!,
-        address: baseAddress!,
-        needTypes: pickN(NEED_TYPES, 1, 3),
-        urgency,
-        description: pick(DESCRIPTIONS),
-        peopleCount: pick([1, 1, 1, 2, 2, 3, 3, 4, 5, 6, 8, 10, 15]),
-        hasInjured: Math.random() < 0.15,
-        hasChildren: Math.random() < 0.35,
-        hasElderly: Math.random() < 0.3,
-        access: pick(ACCESS_STATUSES),
-        contactName: pick(NAMES),
-        contactPhone: randomPhone(),
+        latitude: lat,
+        longitude: lng,
+        accuracyMeters: faker.helpers.arrayElement([5, 10, 15, 20, 50, 100, null]),
+        address: sector.address,
+        needTypes: faker.helpers.arrayElements(NEED_TYPES, { min: 1, max: 3 }),
+        urgency: faker.helpers.arrayElement(URGENCIES),
+        description: generateDescription(),
+        peopleCount: faker.helpers.arrayElement([1, 1, 1, 2, 2, 3, 3, 4, 5, 6, 8, 10, 15]),
+        hasInjured: faker.datatype.boolean(0.15),
+        hasChildren: faker.datatype.boolean(0.35),
+        hasElderly: faker.datatype.boolean(0.3),
+        access: faker.helpers.arrayElement(ACCESS_STATUSES),
+        contactName: faker.person.fullName(),
+        contactPhone: vePhone(),
         createdAt,
         updatedAt,
         verified,
         stage,
-        discardReason: stage === "DESCARTADO" ? pick(DISCARD_REASONS) : null,
+        discardReason: stage === "DESCARTADO" ? faker.helpers.arrayElement(DISCARD_REASONS) : null,
       });
     }
 
