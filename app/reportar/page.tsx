@@ -4,9 +4,16 @@ import { SiteHeader } from "@/components/site-header";
 import { ReportForm } from "@/components/report-form";
 
 export const metadata: Metadata = {
-  title: "Solicitar ayuda — Unidos Venezuela",
+  title: "Solicitar ayuda",
   description:
-    "Reporta un punto que necesita ayuda tras el terremoto del 24 de junio de 2026.",
+    "Reporta un punto que necesita ayuda. Indica ubicación, urgencia, tipo de necesidad y accesibilidad. Toma un minuto y ayuda a coordinar la respuesta.",
+  openGraph: {
+    title: "Solicitar ayuda — Unidos Venezuela",
+    description:
+      "Reporta un punto que necesita ayuda tras el terremoto del 24 de junio de 2026. Indica ubicación, urgencia y tipo de necesidad.",
+    url: "/reportar",
+  },
+  alternates: { canonical: "/reportar" },
 };
 
 // Respaldo del modal: misma experiencia para enlaces compartibles y clientes sin JS.

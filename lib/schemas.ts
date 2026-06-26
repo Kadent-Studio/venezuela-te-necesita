@@ -42,9 +42,9 @@ export const createReportSchema = z.object({
   address: z.string().trim().min(3, "Indica una referencia").max(300),
 
   needTypes: z
-    .array(z.nativeEnum(NeedType))
+    .array(z.enum(NeedType))
     .min(1, "Elige al menos un tipo de ayuda"),
-  urgency: z.nativeEnum(Urgency),
+  urgency: z.enum(Urgency),
   description: z.string().trim().max(2000).optional(),
 
   peopleCount: z.number().int().min(1).max(100000).default(1),
@@ -52,7 +52,7 @@ export const createReportSchema = z.object({
   hasChildren: z.boolean().default(false),
   hasElderly: z.boolean().default(false),
 
-  access: z.nativeEnum(AccessStatus),
+  access: z.enum(AccessStatus),
 
   photoUrl: z.string().url().max(2000).optional(),
 
@@ -65,10 +65,10 @@ export type CreateReportInput = z.infer<typeof createReportSchema>;
 // Filtros y paginación por cursor (GET /api/reports público).
 export const listQuerySchema = z
   .object({
-    needType: z.nativeEnum(NeedType).optional(),
-    urgency: z.nativeEnum(Urgency).optional(),
-    access: z.nativeEnum(AccessStatus).optional(),
-    stage: z.nativeEnum(Stage).optional(),
+    needType: z.enum(NeedType).optional(),
+    urgency: z.enum(Urgency).optional(),
+    access: z.enum(AccessStatus).optional(),
+    stage: z.enum(Stage).optional(),
     cursor: z.string().cuid().optional(),
     limit: z.coerce.number().int().min(1).max(50).default(20),
     lat: z.coerce.number().pipe(latitude).optional(),
@@ -104,8 +104,8 @@ export type GeocodeQuery = z.infer<typeof geocodeQuerySchema>;
 export const updateReportSchema = z
   .object({
     verified: z.boolean().optional(),
-    stage: z.nativeEnum(Stage).optional(),
-    discardReason: z.nativeEnum(DiscardReason).nullish(),
+    stage: z.enum(Stage).optional(),
+    discardReason: z.enum(DiscardReason).nullish(),
     photoUrl: z.null().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "Nada que actualizar")

@@ -8,6 +8,7 @@ import type {
   PublicReportDTO,
   ReportListResponse,
   NearbyReport,
+  StatsResponse,
 } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -21,6 +22,7 @@ export const reportKeys = {
   nearby: (lat: number, lng: number, radius: number) =>
     ["reports", "nearby", lat, lng, radius] as const,
   detail: (id: string) => ["reports", id] as const,
+  stats: () => ["reports", "stats"] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -67,6 +69,13 @@ async function fetchNearbyReports(
   if (!res.ok) throw new Error("Error al cargar reportes cercanos");
   const data = (await res.json()) as { items: NearbyReport[] };
   return data.items;
+}
+
+async function fetchStats(): Promise<StatsResponse> {
+  const url = new URL("/api/reports/stats", window.location.origin);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Error al cargar estadísticas");
+  return res.json() as Promise<StatsResponse>;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,5 +134,14 @@ export function useCreateReport() {
       // Invalida las listas para que refresquen al navegar de vuelta.
       queryClient.invalidateQueries({ queryKey: reportKeys.all });
     },
+  });
+}
+
+/** Estadísticas agregadas (totales, críticas, en atención, verificadas). */
+export function useReportsStats() {
+  return useQuery({
+    queryKey: reportKeys.stats(),
+    queryFn: fetchStats,
+    staleTime: 30_000,
   });
 }

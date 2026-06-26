@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SolicitarAyudaButton } from "@/components/solicitar-ayuda-button";
 import { ReportsFeed } from "@/components/reports-feed";
 import {
@@ -8,31 +8,12 @@ import {
   emptyFilters,
   type ReportFilters,
 } from "@/components/reports-filters";
-
-interface Stats {
-  total: number;
-  critical: number;
-  inProgress: number;
-  verified: number;
-  urgency: { CRITICA: number; ALTA: number; MEDIA: number; BAJA: number };
-}
+import { useReportsStats } from "@/lib/hooks";
+import type { StatsResponse } from "@/lib/types";
 
 export function HomeShell() {
   const [filters, setFilters] = useState<ReportFilters>(emptyFilters);
-  const [stats, setStats] = useState<Stats | null>(null);
-
-  useEffect(() => {
-    let aborted = false;
-    fetch("/api/reports/stats")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!aborted && data) setStats(data);
-      })
-      .catch(() => {});
-    return () => {
-      aborted = true;
-    };
-  }, []);
+  const { data: stats } = useReportsStats();
 
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-8 sm:py-16 lg:px-12">
@@ -148,7 +129,7 @@ function HeroLegend() {
   );
 }
 
-function StatsStrip({ stats }: { stats: Stats | null }) {
+function StatsStrip({ stats }: { stats: StatsResponse | undefined }) {
   return (
     <div
       aria-label="Resumen en vivo"

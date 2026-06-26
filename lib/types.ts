@@ -41,3 +41,11 @@ export interface ReportListResponse {
 export interface NearbyReport extends PublicReportDTO {
   distanceMeters: number;
 }
+
+export interface StatsResponse {
+  total: number;
+  critical: number;
+  inProgress: number;
+  verified: number;
+  urgency: { CRITICA: number; ALTA: number; MEDIA: number; BAJA: number };
+}

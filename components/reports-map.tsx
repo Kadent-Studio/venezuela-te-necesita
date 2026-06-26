@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NeedType } from "@prisma/client";
-import type { PublicReportDTO } from "@/lib/types";
+import type { PublicReportDTO, StatsResponse } from "@/lib/types";
 import {
   accessLabel,
   needTypeLabel,
@@ -20,14 +20,7 @@ import {
   hasActiveFilters,
   type ReportFilters,
 } from "@/components/reports-filters";
-import { useReportsMap } from "@/lib/hooks";
-
-interface Stats {
-  total: number;
-  critical: number;
-  inProgress: number;
-  verified: number;
-}
+import { useReportsMap, useReportsStats } from "@/lib/hooks";
 
 const LeafletMap = dynamic(
   () => import("@/components/reports-map-leaflet").then((m) => m.ReportsMapLeaflet),
@@ -42,25 +35,12 @@ export function ReportsMap() {
   const reports = reportsData ?? [];
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<ReportFilters>(emptyFilters);
-  const [stats, setStats] = useState<Stats | null>(null);
+  const { data: stats } = useReportsStats();
   const listRef = useRef<HTMLDivElement>(null);
 
   const reduceMotion = usePrefersReducedMotion();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let aborted = false;
-    fetch("/api/reports/stats")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!aborted && data) setStats(data);
-      })
-      .catch(() => {});
-    return () => {
-      aborted = true;
-    };
-  }, []);
 
   const filtered = useMemo(() => {
     const q = normalize(query);
@@ -273,7 +253,7 @@ function StatsStrip({
   loadedCount,
   loading,
 }: {
-  stats: Stats | null;
+  stats: StatsResponse | undefined;
   loadedCount: number;
   loading: boolean;
 }) {

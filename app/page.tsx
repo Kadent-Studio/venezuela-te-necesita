@@ -1,5 +1,18 @@
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/site-header";
 import { HomeShell } from "@/components/home-shell";
+
+export const metadata: Metadata = {
+  description:
+    "Encuentra y reporta puntos que necesitan ayuda tras el terremoto del 24 de junio de 2026. Filtra por urgencia, tipo de necesidad y accesibilidad.",
+  openGraph: {
+    title: "Unidos Venezuela — Cada punto es alguien esperando",
+    description:
+      "Reporta dónde se necesita ayuda y ubica los puntos por urgencia y accesibilidad. Así la respuesta llega antes a quien más lo necesita.",
+    url: "/",
+  },
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (
