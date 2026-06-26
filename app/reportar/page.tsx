@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { ReportForm } from "@/components/report-form";
 
 export const metadata: Metadata = {
-  title: "Solicitar ayuda — SOS Venezuela",
+  title: "Solicitar ayuda — Unidos Venezuela",
   description:
     "Reporta un punto que necesita ayuda tras el terremoto del 24 de junio de 2026.",
 };

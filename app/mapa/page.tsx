@@ -3,7 +3,7 @@ import { SiteHeader } from "@/components/site-header";
 import { ReportsMap } from "@/components/reports-map";
 
 export const metadata: Metadata = {
-  title: "Mapa de ayuda — SOS Venezuela",
+  title: "Mapa de ayuda — Unidos Venezuela",
 };
 
 export default function MapaPage() {

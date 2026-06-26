@@ -13,6 +13,7 @@ import {
 import { timeAgo } from "@/lib/time";
 import { IconPin, IconSearch, IconUsers, IconX } from "@/components/ui/icons";
 import { NeedChips, StageBadge } from "@/components/ui/badges";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ReportsFilters,
   emptyFilters,
@@ -133,7 +134,7 @@ export function ReportsMap() {
       </header>
 
       <div className="grid flex-1 grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1fr_420px] lg:gap-7">
-        <div className="flex h-[58vh] min-h-[400px] flex-col overflow-hidden rounded-[var(--radius-card)] border bg-superficie sm:h-auto sm:min-h-[480px] lg:min-h-[640px]">
+        <div className="flex h-[58vh] min-h-[400px] flex-col overflow-hidden rounded-[var(--radius-card)] border bg-superficie sm:h-[560px] lg:h-[640px]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-hueso/60 px-4 py-3 sm:px-5 sm:py-4">
             <p className="text-sm text-ceniza-2">
               <span className="font-mono font-bold tabular-nums text-ceniza">
@@ -196,7 +197,7 @@ export function ReportsMap() {
           </div>
         </div>
 
-        <aside className="flex min-h-[420px] w-full flex-col overflow-hidden rounded-[var(--radius-card)] border bg-superficie sm:min-h-[480px] lg:min-h-[640px]">
+        <aside className="flex h-[70dvh] min-h-[420px] w-full flex-col overflow-hidden rounded-[var(--radius-card)] border bg-superficie sm:h-[560px] lg:h-[640px]">
           <div className="border-b bg-hueso/60 p-4 sm:p-5">
             <label className="flex h-12 items-center gap-2.5 rounded-[var(--radius-input)] border bg-polvo px-3.5 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--foco)]">
               <IconSearch className="size-4 shrink-0 text-ceniza-3" />
@@ -228,34 +229,36 @@ export function ReportsMap() {
             </div>
           </div>
 
-          <div ref={listRef} className="flex-1 overflow-y-auto p-3">
-            {isLoading ? (
-              <SidebarSkeleton />
-            ) : isError ? (
-              <SidebarNotice text="No se pudieron cargar las solicitudes." />
-            ) : filtered.length === 0 ? (
-              <SidebarNotice
-                text={
-                  query
-                    ? "Ningún punto coincide con la búsqueda."
-                    : activeFilters
-                      ? "Ningún punto coincide con los filtros."
-                      : "Aún no hay solicitudes."
-                }
-              />
-            ) : (
-              <div className="flex flex-col gap-2.5">
-                {filtered.map((report) => (
-                  <ReportListItem
-                    key={report.id}
-                    report={report}
-                    selected={report.id === selectedId}
-                    onClick={() => selectReport(report.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <ScrollArea viewportRef={listRef} className="flex-1">
+            <div className="p-3">
+              {isLoading ? (
+                <SidebarSkeleton />
+              ) : isError ? (
+                <SidebarNotice text="No se pudieron cargar las solicitudes." />
+              ) : filtered.length === 0 ? (
+                <SidebarNotice
+                  text={
+                    query
+                      ? "Ningún punto coincide con la búsqueda."
+                      : activeFilters
+                        ? "Ningún punto coincide con los filtros."
+                        : "Aún no hay solicitudes."
+                  }
+                />
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  {filtered.map((report) => (
+                    <ReportListItem
+                      key={report.id}
+                      report={report}
+                      selected={report.id === selectedId}
+                      onClick={() => selectReport(report.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </aside>
       </div>
     </section>
