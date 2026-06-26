@@ -1,13 +1,22 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 import { defineConfig } from "prisma/config";
 
 // Prisma 7: configuración del CLI (migrate / studio / introspection).
 // La conexión de runtime de la app se hace con un driver adapter en lib/prisma.ts.
-// Se usa process.env (no el helper env() estricto) para no fallar cuando la variable
-// aún no existe; las migraciones requieren DIRECT_URL/DATABASE_URL presentes.
+// Next carga .env.local en runtime, pero Prisma CLI no lo hace por defecto.
+loadEnv({ path: ".env.local" });
+loadEnv();
+
+const databaseUrl =
+  process.env.DIRECT_URL ??
+  process.env.POSTGRES_URL_NON_POOLING ??
+  process.env.DATABASE_URL_UNPOOLED ??
+  process.env.DATABASE_URL ??
+  "";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "",
+    url: databaseUrl,
   },
 });
