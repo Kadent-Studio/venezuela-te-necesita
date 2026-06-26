@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form";
 import { IconCamera, IconCheck, IconX } from "@/components/ui/icons";
 import { LocationPicker } from "@/components/location-picker";
+import { useCreateReport } from "@/lib/hooks";
 
 type Errors = Record<string, string>;
 type Point = { latitude: number; longitude: number };
@@ -55,9 +56,10 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
   const [contactPhone, setContactPhone] = useState("");
 
   const [errors, setErrors] = useState<Errors>({});
-  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [doneId, setDoneId] = useState<string | null>(null);
+
+  const createReport = useCreateReport();
 
   const err = (k: string) => errors[k];
 
@@ -106,57 +108,42 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
     setErrors(local);
     if (Object.keys(local).length > 0) return;
 
-    setSubmitting(true);
     try {
-      const res = await fetch("/api/reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          latitude: location?.latitude,
-          longitude: location?.longitude,
-          accuracyMeters: accuracy ?? undefined,
-          address: address.trim(),
-          needTypes,
-          urgency,
-          description: description.trim() || undefined,
-          peopleCount: Number(peopleCount) || 1,
-          hasInjured,
-          hasChildren,
-          hasElderly,
-          access,
-          photoUrl: photoUrl ?? undefined,
-          contactName: contactName.trim(),
-          contactPhone: contactPhone.trim(),
-        }),
+      const { id } = await createReport.mutateAsync({
+        latitude: location?.latitude,
+        longitude: location?.longitude,
+        accuracyMeters: accuracy ?? undefined,
+        address: address.trim(),
+        needTypes,
+        urgency,
+        description: description.trim() || undefined,
+        peopleCount: Number(peopleCount) || 1,
+        hasInjured,
+        hasChildren,
+        hasElderly,
+        access,
+        photoUrl: photoUrl ?? undefined,
+        contactName: contactName.trim(),
+        contactPhone: contactPhone.trim(),
       });
-
-      if (res.status === 201) {
-        const { id } = await res.json();
-        setDoneId(id);
-        onSuccess?.(id);
-        return;
-      }
-      if (res.status === 400) {
-        const data = await res.json();
+      setDoneId(id);
+      onSuccess?.(id);
+    } catch (err: unknown) {
+      const data = err as
+        | { error?: string; fieldErrors?: Record<string, string[]> }
+        | undefined;
+      if (data?.fieldErrors) {
         const fe: Errors = {};
-        for (const [k, v] of Object.entries(
-          (data.fieldErrors ?? {}) as Record<string, string[]>,
-        )) {
+        for (const [k, v] of Object.entries(data.fieldErrors)) {
           fe[k] = v[0];
         }
         setErrors(fe);
         setSubmitError("Revisa los campos marcados.");
-        return;
-      }
-      if (res.status === 429) {
+      } else if (data?.error?.includes("Demasiados")) {
         setSubmitError("Demasiados envíos. Espera un momento e intenta de nuevo.");
-        return;
+      } else {
+        setSubmitError("No se pudo enviar. Intenta de nuevo en un momento.");
       }
-      setSubmitError("No se pudo enviar. Intenta de nuevo en un momento.");
-    } catch {
-      setSubmitError("Sin conexión. Revisa tu red e intenta de nuevo.");
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -356,11 +343,11 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
       >
         <button
           type="submit"
-          disabled={submitting}
+          disabled={createReport.isPending}
           className="inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-input)] text-base font-bold text-[var(--superficie)] shadow-sm transition-transform active:scale-[0.99] disabled:opacity-60 sm:h-12"
           style={{ background: "var(--color-tierra)" }}
         >
-          {submitting ? "Enviando…" : "Enviar solicitud de ayuda"}
+          {createReport.isPending ? "Enviando…" : "Enviar solicitud de ayuda"}
         </button>
       </div>
     </form>

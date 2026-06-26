@@ -1,6 +1,7 @@
-import type { Metadata, Viewport } from "next";
-import { Public_Sans, IBM_Plex_Mono } from "next/font/google";
+import Providers from "@/components/providers";
 import "leaflet/dist/leaflet.css";
+import type { Metadata, Viewport } from "next";
+import { IBM_Plex_Mono, Public_Sans } from "next/font/google";
 import "./globals.css";
 
 const publicSans = Public_Sans({
@@ -43,7 +44,7 @@ export default function RootLayout({
       className={`${publicSans.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-hueso text-ceniza">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

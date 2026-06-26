@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NeedType } from "@prisma/client";
-import type { PublicReportDTO, ReportListResponse } from "@/lib/types";
+import type { PublicReportDTO } from "@/lib/types";
 import {
   accessLabel,
   needTypeLabel,
@@ -19,8 +19,7 @@ import {
   hasActiveFilters,
   type ReportFilters,
 } from "@/components/reports-filters";
-
-const PAGE_SIZE = 50;
+import { useReportsMap } from "@/lib/hooks";
 
 interface Stats {
   total: number;
@@ -38,47 +37,19 @@ const LeafletMap = dynamic(
 );
 
 export function ReportsMap() {
-  const [reports, setReports] = useState<PublicReportDTO[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data: reportsData, isLoading, isError, refetch } = useReportsMap();
+  const reports = reportsData ?? [];
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [filters, setFilters] = useState<ReportFilters>(emptyFilters);
   const [stats, setStats] = useState<Stats | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const reduceMotion = usePrefersReducedMotion();
 
-  const filterKey = `${filters.urgency ?? ""}|${filters.needType ?? ""}|${filters.access ?? ""}`;
-
-  useEffect(() => {
-    let aborted = false;
-    async function loadReports() {
-      try {
-        const url = new URL("/api/reports", window.location.origin);
-        url.searchParams.set("limit", String(PAGE_SIZE));
-        if (filters.urgency) url.searchParams.set("urgency", filters.urgency);
-        if (filters.needType) url.searchParams.set("needType", filters.needType);
-        if (filters.access) url.searchParams.set("access", filters.access);
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("reports");
-        const data = (await res.json()) as ReportListResponse;
-        if (aborted) return;
-        setReports(data.items);
-        setSelectedId(data.items[0]?.id ?? null);
-        setError(false);
-      } catch {
-        if (!aborted) setError(true);
-      } finally {
-        if (!aborted) setLoading(false);
-      }
-    }
-    void loadReports();
-    return () => {
-      aborted = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  if (reports.length > 0 && !reports.some((r) => r.id === selectedId)) {
+    setSelectedId(reports[0].id);
+  }
 
   useEffect(() => {
     let aborted = false;
@@ -95,8 +66,13 @@ export function ReportsMap() {
 
   const filtered = useMemo(() => {
     const q = normalize(query);
-    if (!q) return reports;
-    return reports.filter((report) => {
+    let items = reports;
+    if (filters.urgency) items = items.filter((r) => r.urgency === filters.urgency);
+    if (filters.needType)
+      items = items.filter((r) => r.needTypes.includes(filters.needType!));
+    if (filters.access) items = items.filter((r) => r.access === filters.access);
+    if (!q) return items;
+    return items.filter((report) => {
       const haystack = normalize(
         [
           report.address,
@@ -108,20 +84,14 @@ export function ReportsMap() {
       );
       return haystack.includes(q);
     });
-  }, [query, reports]);
+  }, [query, reports, filters]);
 
-  const selected = reports.find((r) => r.id === selectedId) ?? null;
+  const selected = (reports ?? []).find((r) => r.id === selectedId) ?? null;
 
   function selectReport(id: string) {
     setSelectedId(id);
     const row = listRef.current?.querySelector(`[data-report-id="${id}"]`);
     row?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
-  }
-
-  function retry() {
-    setLoading(true);
-    setError(false);
-    setFilters((f) => ({ ...f }));
   }
 
   const activeFilters = hasActiveFilters(filters);
@@ -148,12 +118,11 @@ export function ReportsMap() {
             </p>
           </div>
         </div>
-
         <div
           className="flex flex-col overflow-hidden rounded-[var(--radius-card)] border"
           style={{ borderColor: "var(--borde)" }}
         >
-          <StatsStrip stats={stats} loadedCount={reports.length} loading={loading} />
+          <StatsStrip stats={stats} loadedCount={reports.length} loading={isLoading} />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t bg-superficie px-4 py-2.5 sm:px-5">
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ceniza-3">
               Filtros
@@ -168,11 +137,11 @@ export function ReportsMap() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-hueso/60 px-4 py-3 sm:px-5 sm:py-4">
             <p className="text-sm text-ceniza-2">
               <span className="font-mono font-bold tabular-nums text-ceniza">
-                {loading ? "—" : filtered.length}
+                {isLoading ? "—" : filtered.length}
               </span>
               <span className="text-ceniza-3">
                 {" "}
-                {loading
+                {isLoading
                   ? "cargando"
                   : `de ${reports.length} ${reports.length === 1 ? "punto" : "puntos"} visibles`}
               </span>
@@ -198,14 +167,14 @@ export function ReportsMap() {
             )}
           </div>
           <div className="relative flex-1">
-            {loading ? (
+            {isLoading ? (
               <MapSkeleton />
-            ) : error ? (
+            ) : isError ? (
               <MapNotice
                 title="No se pudo cargar el mapa"
                 body="Revisa la conexión e intenta de nuevo."
                 action="Reintentar"
-                onAction={retry}
+                onAction={() => void refetch()}
               />
             ) : reports.length === 0 ? (
               <MapNotice
@@ -260,9 +229,9 @@ export function ReportsMap() {
           </div>
 
           <div ref={listRef} className="flex-1 overflow-y-auto p-3">
-            {loading ? (
+            {isLoading ? (
               <SidebarSkeleton />
-            ) : error ? (
+            ) : isError ? (
               <SidebarNotice text="No se pudieron cargar las solicitudes." />
             ) : filtered.length === 0 ? (
               <SidebarNotice
