@@ -3,23 +3,27 @@
 // un driver adapter (Neon) configurado en lib/prisma.ts.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [postgis]
 }
 
 model Report {
-  id            String   @id @default(cuid())
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Ubicación
   latitude       Float
   longitude      Float
   accuracyMeters Int?
   address        String // sector, ciudad, punto de referencia (obligatorio)
+  // GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography) STORED
+  location       Unsupported("geography(Point, 4326)")?
 
   // Necesidad
   needTypes   NeedType[]
