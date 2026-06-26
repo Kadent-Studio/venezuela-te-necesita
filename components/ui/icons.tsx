@@ -90,3 +90,10 @@ export const IconLocate = (p: SVGProps<SVGSVGElement>) => (
     <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
   </Base>
 );
+
+export const IconSearch = (p: SVGProps<SVGSVGElement>) => (
+  <Base {...p}>
+    <circle cx="11" cy="11" r="6" />
+    <path d="m16 16 4 4" />
+  </Base>
+);

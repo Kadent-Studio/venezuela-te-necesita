@@ -20,15 +20,15 @@ import {
   Segmented,
   CheckRow,
 } from "@/components/ui/form";
-import { IconLocate, IconCamera, IconCheck, IconX } from "@/components/ui/icons";
+import { IconCamera, IconCheck, IconX } from "@/components/ui/icons";
+import { LocationPicker } from "@/components/location-picker";
 
 type Errors = Record<string, string>;
+type Point = { latitude: number; longitude: number };
 
 export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) {
-  const [lat, setLat] = useState("");
-  const [lng, setLng] = useState("");
+  const [location, setLocation] = useState<Point | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
-  const [geoMsg, setGeoMsg] = useState<string | null>(null);
 
   const [address, setAddress] = useState("");
   const [needTypes, setNeedTypes] = useState<NeedType[]>([]);
@@ -62,25 +62,6 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
     );
   }
 
-  function useMyLocation() {
-    setGeoMsg(null);
-    if (!navigator.geolocation) {
-      setGeoMsg("Tu dispositivo no permite ubicación. Escríbela manualmente.");
-      return;
-    }
-    setGeoMsg("Obteniendo ubicación…");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(pos.coords.latitude.toFixed(6));
-        setLng(pos.coords.longitude.toFixed(6));
-        setAccuracy(Math.round(pos.coords.accuracy));
-        setGeoMsg(null);
-      },
-      () => setGeoMsg("No se pudo obtener la ubicación. Escríbela manualmente."),
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
-
   async function onPhoto(file: File) {
     setPhotoErr(null);
     if (!file.type.startsWith("image/")) {
@@ -103,10 +84,7 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
 
   function validate(): Errors {
     const e: Errors = {};
-    const latN = Number(lat);
-    const lngN = Number(lng);
-    if (!lat || Number.isNaN(latN)) e.latitude = "Indica la ubicación";
-    if (!lng || Number.isNaN(lngN)) e.longitude = "Indica la ubicación";
+    if (!location) e.location = "Indica la ubicación en el mapa";
     if (address.trim().length < 3) e.address = "Indica una referencia del lugar";
     if (needTypes.length === 0) e.needTypes = "Elige al menos un tipo de ayuda";
     if (!urgency) e.urgency = "Indica la urgencia";
@@ -129,8 +107,8 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          latitude: Number(lat),
-          longitude: Number(lng),
+          latitude: location?.latitude,
+          longitude: location?.longitude,
           accuracyMeters: accuracy ?? undefined,
           address: address.trim(),
           needTypes,
@@ -202,39 +180,15 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
       <Section title="Ubicación">
-        <button
-          type="button"
-          onClick={useMyLocation}
-          className="inline-flex w-fit items-center gap-2 rounded-[var(--radius-input)] border px-3 py-2 text-sm font-semibold text-tierra"
-          style={{ borderColor: "var(--color-tierra)" }}
-        >
-          <IconLocate className="size-4" />
-          Usar mi ubicación
-        </button>
-        {geoMsg && <p className="text-xs text-ceniza-3">{geoMsg}</p>}
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Latitud" error={err("latitude")} required>
-            <Input
-              inputMode="decimal"
-              placeholder="10.6"
-              value={lat}
-              onChange={(e) => setLat(e.target.value)}
-              className="font-mono"
-            />
-          </Field>
-          <Field label="Longitud" error={err("longitude")} required>
-            <Input
-              inputMode="decimal"
-              placeholder="-67.0"
-              value={lng}
-              onChange={(e) => setLng(e.target.value)}
-              className="font-mono"
-            />
-          </Field>
-        </div>
-        {accuracy != null && (
-          <p className="text-xs text-ceniza-3">Precisión GPS: ±{accuracy} m</p>
-        )}
+        <LocationPicker
+          value={location}
+          accuracyMeters={accuracy}
+          error={err("location") ?? err("latitude") ?? err("longitude")}
+          onChange={(point, nextAccuracy = null) => {
+            setLocation(point);
+            setAccuracy(nextAccuracy);
+          }}
+        />
         <Field
           label="Referencia del lugar"
           hint="Sector, ciudad, punto de referencia (ej. edificio azul, 3er piso)"

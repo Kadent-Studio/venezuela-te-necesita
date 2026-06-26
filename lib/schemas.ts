@@ -83,6 +83,14 @@ export const nearbyQuerySchema = z.object({
 
 export type NearbyQuery = z.infer<typeof nearbyQuerySchema>;
 
+// Buscador de ciudad/zona para centrar el mapa. La búsqueda real vive en
+// /api/geocode para identificar la app ante Nominatim y limitar el alcance.
+export const geocodeQuerySchema = z.object({
+  q: z.string().trim().min(2, "Busca una ciudad o sector").max(120),
+});
+
+export type GeocodeQuery = z.infer<typeof geocodeQuerySchema>;
+
 // Actualización de estado por un coordinador (PATCH /api/admin/reports/[id]).
 // photoUrl admite null explícito para retirar una foto (moderación).
 export const updateReportSchema = z
