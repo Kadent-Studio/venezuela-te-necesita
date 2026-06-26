@@ -142,7 +142,7 @@ export default function Image() {
             opacity: 0.85,
           }}
         >
-          <span>Reportá ahora</span>
+          <span>Reporta ahora</span>
           <span style={{ fontSize: 28, fontWeight: 700 }}>→</span>
           <span
             style={{
