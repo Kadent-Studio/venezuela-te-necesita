@@ -61,6 +61,21 @@ export default function Image() {
           ))}
         </div>
 
+        {/* Bandera de Venezuela */}
+        <img
+          src="https://flagcdn.com/w320/ve.png"
+          width={180}
+          height={120}
+          style={{
+            position: "absolute",
+            top: 60,
+            left: 60,
+            borderRadius: 8,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+          }}
+          alt="Bandera de Venezuela"
+        />
+
         {/* Círculos concéntricos decorativos (eco del ícono) */}
         <div
           style={{
