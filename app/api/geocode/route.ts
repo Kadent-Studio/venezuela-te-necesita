@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
         "Accept-Language": "es-VE,es;q=0.9",
         "User-Agent":
           process.env.NOMINATIM_USER_AGENT ??
-          "vzla-te-necesita/0.1 (contacto: admin@vzla-te-necesita.local)",
+          "sosvenezuela/0.1 (contacto: admin@sosvenezuela.local)",
       },
       next: { revalidate: 60 * 60 * 24 },
     });

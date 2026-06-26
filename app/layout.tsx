@@ -20,7 +20,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Venezuela te necesita — Solicita y coordina ayuda",
+  title: "SOS Venezuela — Solicita y coordina ayuda",
   description:
     "Reporta y ubica puntos que necesitan ayuda tras el terremoto del 24 de junio de 2026 en Venezuela. Coordina la respuesta por urgencia y accesibilidad.",
 };

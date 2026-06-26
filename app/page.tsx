@@ -10,7 +10,7 @@ export default function Home() {
       <footer className="border-t pb-safe">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-8 text-xs text-ceniza-3 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-12">
           <p>
-            Venezuela te necesita · Coordinación ciudadana de ayuda tras el sismo
+            SOS Venezuela · Coordinación ciudadana de ayuda tras el sismo
             del 24 de junio de 2026.
           </p>
           <p className="text-ceniza-2">

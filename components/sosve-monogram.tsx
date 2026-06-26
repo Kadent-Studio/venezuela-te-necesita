@@ -1,4 +1,4 @@
-export function VtnMonogram({ className = "size-9" }: { className?: string }) {
+export function SosVeMonogram({ className = "size-9" }: { className?: string }) {
   return (
     <span
       aria-hidden
@@ -11,10 +11,10 @@ export function VtnMonogram({ className = "size-9" }: { className?: string }) {
       }}
     >
       <span
-        className="font-extrabold leading-none tracking-[-0.06em] text-[0.72em]"
+        className="font-extrabold leading-none tracking-[-0.04em] text-[0.46em]"
         style={{ color: "var(--hueso)" }}
       >
-        VTN
+        SOSVe
       </span>
     </span>
   );

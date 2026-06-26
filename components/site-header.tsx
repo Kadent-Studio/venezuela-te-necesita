@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SolicitarAyudaButton } from "@/components/solicitar-ayuda-button";
-import { VtnMonogram } from "@/components/vtn-monogram";
+import { SosVeMonogram } from "@/components/sosve-monogram";
 import { IconPin } from "@/components/ui/icons";
 
 const NAV_LINKS = [
@@ -28,12 +28,12 @@ export function SiteHeader() {
         <Link
           href="/"
           className="group flex min-w-0 items-center gap-2.5 rounded-md outline-none sm:gap-3"
-          aria-label="Venezuela te necesita — inicio"
+          aria-label="SOS Venezuela — inicio"
         >
-          <VtnMonogram className="size-9 shrink-0" />
+          <SosVeMonogram className="size-9 shrink-0" />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate text-[13px] font-extrabold tracking-tight text-ceniza sm:text-[15px]">
-              Venezuela <span className="text-tierra">te necesita</span>
+              SOS <span className="text-tierra">Venezuela</span>
             </span>
             <span className="hidden text-[11px] font-medium uppercase tracking-[0.12em] text-ceniza-3 sm:block">
               Coordinación · sismo 24-J
