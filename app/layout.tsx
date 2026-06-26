@@ -5,6 +5,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Public_Sans } from "next/font/google";
 import { getBaseUrl } from "@/lib/url";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const publicSans = Public_Sans({
@@ -135,6 +136,7 @@ export default function RootLayout({
           }}
         />
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
