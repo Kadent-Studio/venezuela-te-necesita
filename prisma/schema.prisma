@@ -1,0 +1,12 @@
+// Esquema Prisma — vzla-te-necesita
+// El modelo Report y sus enums se añaden en la Fase 1.
+// Prisma 7: las URLs de conexión viven en prisma.config.ts; el cliente usa
+// un driver adapter (Neon) configurado en lib/prisma.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}

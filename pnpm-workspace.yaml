@@ -1,6 +1,7 @@
-allowBuilds:
-  sharp: set this to true or false
-  unrs-resolver: set this to true or false
-ignoredBuiltDependencies:
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - prisma
   - sharp
+ignoredBuiltDependencies:
   - unrs-resolver
