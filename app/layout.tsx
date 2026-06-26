@@ -1,5 +1,7 @@
 import Providers from "@/components/providers";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Public_Sans } from "next/font/google";
 import "./globals.css";

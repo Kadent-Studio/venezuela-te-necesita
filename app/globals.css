@@ -203,3 +203,48 @@ label {
     transition: none;
   }
 }
+
+/* ── MarkerCluster personalizado ──────────────────────────── */
+
+/* Override default markercluster background – we use custom divIcons */
+.marker-cluster {
+  background: transparent !important;
+}
+.marker-cluster div {
+  background: transparent !important;
+  margin: 0 !important;
+  font: inherit !important;
+}
+
+.vtn-cluster {
+  background: transparent !important;
+}
+
+.vtn-cluster-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--cluster-color, var(--color-ceniza-3));
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--cluster-color, var(--color-ceniza-3)) 22%, transparent),
+    0 0 0 7px color-mix(in srgb, var(--cluster-color, var(--color-ceniza-3)) 10%, transparent),
+    0 6px 16px rgba(31, 27, 23, 0.2);
+  transition:
+    transform 180ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Hover feedback */
+.vtn-cluster:hover .vtn-cluster-inner {
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--cluster-color, var(--color-ceniza-3)) 26%, transparent),
+    0 0 0 9px color-mix(in srgb, var(--cluster-color, var(--color-ceniza-3)) 12%, transparent),
+    0 8px 22px rgba(31, 27, 23, 0.26);
+}
