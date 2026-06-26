@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { PublicReportDTO, ReportListResponse } from "@/lib/types";
+import type { PublicReportDTO } from "@/lib/types";
 import {
   accessLabel,
   needTypeLabel,
@@ -12,8 +12,7 @@ import {
 import { timeAgo } from "@/lib/time";
 import { IconPin, IconSearch, IconUsers } from "@/components/ui/icons";
 import { NeedChips, StageBadge } from "@/components/ui/badges";
-
-const PAGE_SIZE = 50;
+import { useReportsMap } from "@/lib/hooks";
 
 const LeafletMap = dynamic(
   () => import("@/components/reports-map-leaflet").then((m) => m.ReportsMapLeaflet),
@@ -24,44 +23,23 @@ const LeafletMap = dynamic(
 );
 
 export function ReportsMap() {
-  const [reports, setReports] = useState<PublicReportDTO[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data: reports, isLoading, isError, refetch } = useReportsMap();
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
 
   const reduceMotion = usePrefersReducedMotion();
 
-  async function loadReports(markLoading = true) {
-    if (markLoading) setLoading(true);
-    setError(false);
-    try {
-      const url = new URL("/api/reports", window.location.origin);
-      url.searchParams.set("limit", String(PAGE_SIZE));
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("reports");
-      const data = (await res.json()) as ReportListResponse;
-      setReports(data.items);
-      setSelectedId(data.items[0]?.id ?? null);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
+  // Primer reporte como seleccionado por defecto: se recalcula con los datos.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  if (reports && reports.length > 0 && !reports.some((r) => r.id === selectedId)) {
+    setSelectedId(reports[0].id);
   }
-
-  useEffect(() => {
-    // Carga inicial: el estado inicial ya es loading=true; los setState ocurren
-    // cuando responde fetch, que es el sistema externo sincronizado por el efecto.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadReports(false);
-  }, []);
 
   const filtered = useMemo(() => {
     const q = normalize(query);
-    if (!q) return reports;
-    return reports.filter((report) => {
+    const items = reports ?? [];
+    if (!q) return items;
+    return items.filter((report) => {
       const haystack = normalize(
         [
           report.address,
@@ -75,7 +53,7 @@ export function ReportsMap() {
     });
   }, [query, reports]);
 
-  const selected = reports.find((r) => r.id === selectedId) ?? null;
+  const selected = (reports ?? []).find((r) => r.id === selectedId) ?? null;
 
   function selectReport(id: string) {
     setSelectedId(id);
@@ -92,7 +70,9 @@ export function ReportsMap() {
               Mapa de ayuda
             </h1>
             <p className="text-sm text-ceniza-3">
-              {loading ? "Cargando reportes..." : `${reports.length} reportes cargados`}
+              {isLoading
+                ? "Cargando reportes..."
+                : `${(reports ?? []).length} reportes cargados`}
             </p>
           </div>
           {selected && (
@@ -108,16 +88,16 @@ export function ReportsMap() {
           )}
         </div>
         <div className="relative flex-1">
-          {loading ? (
+          {isLoading ? (
             <MapSkeleton />
-          ) : error ? (
+          ) : isError ? (
             <MapNotice
               title="No se pudo cargar el mapa"
               body="Revisa la conexión e intenta de nuevo."
               action="Reintentar"
-              onAction={loadReports}
+              onAction={() => void refetch()}
             />
-          ) : reports.length === 0 ? (
+          ) : (reports ?? []).length === 0 ? (
             <MapNotice
               title="Sin puntos todavía"
               body="Cuando existan solicitudes verificables, aparecerán en esta vista."
@@ -151,9 +131,9 @@ export function ReportsMap() {
         </div>
 
         <div ref={listRef} className="flex-1 overflow-y-auto p-2">
-          {loading ? (
+          {isLoading ? (
             <SidebarSkeleton />
-          ) : error ? (
+          ) : isError ? (
             <SidebarNotice text="No se pudieron cargar las solicitudes." />
           ) : filtered.length === 0 ? (
             <SidebarNotice text="No hay reportes que coincidan con la búsqueda." />
