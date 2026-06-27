@@ -77,7 +77,9 @@ export function ReportsMapClusterLayer({
   onSelect: (id: string) => void;
 }) {
   const map = useMap();
-  const [bounds, setBounds] = useState<[number, number, number, number] | null>(null);
+  const [bounds, setBounds] = useState<[number, number, number, number] | null>(
+    null,
+  );
   const [zoom, setZoom] = useState(map.getZoom());
 
   // Escuchar eventos del mapa para mantener bounds y zoom actualizados
@@ -96,63 +98,56 @@ export function ReportsMapClusterLayer({
     setZoom(map.getZoom());
   }, [map]);
 
-  // Convertir reportes a features GeoJSON (memoizado)
-  const points = useMemo(() => {
-    return reports.map((report) => ({
-      type: "Feature" as const,
-      properties: {
-        reportId: report.id,
-        urgency: report.urgency,
-        urgencyRank: urgencyRank(report.urgency),
-        report,
-      },
-      geometry: {
-        type: "Point" as const,
-        coordinates: [report.longitude, report.latitude],
-      },
-    }));
-  }, [reports]);
+  const points = reports.map((report) => ({
+    type: "Feature" as const,
+    properties: {
+      reportId: report.id,
+      urgency: report.urgency,
+      urgencyRank: urgencyRank(report.urgency),
+      report,
+    },
+    geometry: {
+      type: "Point" as const,
+      coordinates: [report.longitude, report.latitude],
+    },
+  }));
 
   // Índice Supercluster memoizado
   const index = useMemo(() => {
-    const sc = new Supercluster<MarkerProps, ClusterProps>({
+    return new Supercluster<MarkerProps, ClusterProps>({
       radius: 55,
       maxZoom: 15,
       map: (props) => ({ maxUrgencyRank: props.urgencyRank }),
       reduce: (acc, props) => {
-        acc.maxUrgencyRank = Math.max(
-          acc.maxUrgencyRank,
-          props.maxUrgencyRank,
-        );
+        acc.maxUrgencyRank = Math.max(acc.maxUrgencyRank, props.maxUrgencyRank);
       },
-    });
-    sc.load(points);
-    return sc;
+    }).load(points);
   }, [points]);
 
   // Calcular clusters y marcadores visibles según viewport actual
-  const clustersAndMarkers = useMemo(() => {
-    if (!bounds) return [];
-    return index.getClusters(
-      [bounds[0], bounds[1], bounds[2], bounds[3]],
-      Math.floor(zoom),
-    );
-  }, [index, bounds, zoom]);
+  const clustersAndMarkers = bounds
+    ? index.getClusters(
+        [bounds[0], bounds[1], bounds[2], bounds[3]],
+        Math.floor(zoom),
+      )
+    : [];
 
   return (
     <>
       {clustersAndMarkers.map((feature) => {
         const [longitude, latitude] = feature.geometry.coordinates;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const props = feature.properties as any;
+        const props = feature.properties;
 
         // ── Cluster ──
-        if (props.cluster) {
+        if ("cluster" in props && props.cluster) {
           return (
             <Marker
               key={`cluster-${feature.id}`}
               position={[latitude, longitude]}
-              icon={createClusterIcon(props.point_count, props.maxUrgencyRank ?? 0)}
+              icon={createClusterIcon(
+                props.point_count,
+                props.maxUrgencyRank ?? 0,
+              )}
               eventHandlers={{
                 click: () => {
                   const expansionZoom = Math.min(
