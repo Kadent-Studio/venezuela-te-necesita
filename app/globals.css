@@ -186,17 +186,45 @@ label {
 
 
 
-/* ── MarkerCluster personalizado ──────────────────────────── */
+/* ── Pin de marcador individual ──────────────────────────── */
 
-/* Override default markercluster background – we use custom divIcons */
-.marker-cluster {
-  background: transparent !important;
+.vtn-map-pin {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50% 50% 50% 0;
+  border: 2.5px solid var(--superficie);
+  background-color: var(--vtn-pin-color, var(--color-ceniza-3));
+  transform: rotate(-45deg);
+  box-shadow:
+    0 1px 2px rgba(31, 27, 23, 0.2),
+    0 6px 14px rgba(31, 27, 23, 0.28);
+  transition:
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
-.marker-cluster div {
-  background: transparent !important;
-  margin: 0 !important;
-  font: inherit !important;
+
+.vtn-map-pin[data-selected="true"] {
+  transform: rotate(-45deg) scale(1.22);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--vtn-pin-color, var(--color-ceniza-3)) 18%, transparent),
+    0 8px 20px rgba(31, 27, 23, 0.32);
 }
+
+.vtn-map-pin-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--superficie);
+  opacity: 0.85;
+}
+
+/* ── Cluster de marcadores ───────────────────────────────── */
 
 .vtn-cluster {
   background: transparent !important;

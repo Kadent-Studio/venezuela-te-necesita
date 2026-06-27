@@ -1,148 +1,71 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { useState, useEffect, useMemo } from "react";
 import L from "leaflet";
-import "leaflet.markercluster";
-import { useMap } from "react-leaflet";
+import { Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import Supercluster from "supercluster";
 import type { PublicReportDTO } from "@/lib/types";
 import { urgencyColor, urgencyLabel } from "@/lib/labels";
 import { timeAgo } from "@/lib/time";
-
 import { IconNavigation } from "./ui/icons";
 import { NeedChips } from "./ui/badges";
 
-/**
- * Custom cluster icon that shows the count and picks color intensity
- * based on the highest urgency inside the cluster.
- */
-function createClusterIcon(
-  childCount: number,
-  largestUrgency: string,
-): L.DivIcon {
-  const size = childCount < 10 ? 40 : childCount < 100 ? 48 : 56;
+// ── Tipos para propiedades de features de Supercluster ──
+
+interface MarkerProps {
+  reportId: string;
+  urgency: string;
+  urgencyRank: number;
+  report: PublicReportDTO;
+}
+
+interface ClusterProps {
+  maxUrgencyRank: number;
+}
+
+// ── Helpers ──
+
+function urgencyRank(urgency: string): number {
+  const map: Record<string, number> = {
+    CRITICA: 3,
+    ALTA: 2,
+    MEDIA: 1,
+    BAJA: 0,
+  };
+  return map[urgency] ?? 0;
+}
+
+const URGENCY_CSS_MAP = [
+  "var(--color-bajo)",
+  "var(--color-medio)",
+  "var(--color-alto)",
+  "var(--color-critico)",
+];
+
+function createClusterIcon(count: number, maxRank: number): L.DivIcon {
+  const size = count < 10 ? 40 : count < 100 ? 48 : 56;
+  const color = URGENCY_CSS_MAP[maxRank] ?? "var(--color-ceniza-3)";
   return L.divIcon({
     className: "vtn-cluster",
-    html: `<span class="vtn-cluster-inner" style="
-      --cluster-color: ${largestUrgency};
-      width:${size}px;height:${size}px;
-    ">${childCount}</span>`,
+    html: `<span class="vtn-cluster-inner" style="--cluster-color: ${color}; width:${size}px; height:${size}px;">${count}</span>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
 }
 
-/**
- * Returns the CSS variable for the highest urgency among the cluster's children.
- */
-function clusterColor(children: L.Marker[]): string {
-  let best = 0;
-  for (const m of children) {
-    const u = (m as unknown as Record<string, number>).vtnUrgency ?? 0;
-    if (u > best) best = u;
-  }
-  const map = [
-    "var(--color-bajo)",
-    "var(--color-medio)",
-    "var(--color-alto)",
-    "var(--color-critico)",
-  ];
-  return map[best] ?? "var(--color-ceniza-3)";
-}
-
-/**
- * Urgency rank used for cluster colouring (0 = lowest).
- */
-function urgencyRank(urgency: string): number {
-  switch (urgency) {
-    case "CRITICA":
-      return 3;
-    case "ALTA":
-      return 2;
-    case "MEDIA":
-      return 1;
-    case "BAJA":
-      return 0;
-    default:
-      return 0;
-  }
-}
-
-function PopupContent({ report }: { report: PublicReportDTO }) {
-  return (
-    <div className="flex max-w-72 flex-col gap-2">
-      <div className="flex items-center justify-between gap-3">
-        <span
-          className="rounded-input px-2 py-1 text-xs font-bold"
-          style={{
-            color: urgencyColor[report.urgency],
-            background: `color-mix(in srgb, ${urgencyColor[report.urgency]} 12%, var(--superficie))`,
-          }}
-        >
-          {urgencyLabel[report.urgency]}
-        </span>
-        <span className="font-mono text-[11px] text-ceniza-3">
-          {timeAgo(report.createdAt)}
-        </span>
-      </div>
-      <NeedChips needTypes={report.needTypes} />
-      <p className="text-sm font-semibold leading-snug text-ceniza">
-        {report.address}
-      </p>
-      <p className="text-xs text-ceniza-3">
-        {report.peopleCount}{" "}
-        {report.peopleCount === 1 ? "persona afectada" : "personas afectadas"}
-      </p>
-      <a
-        href={`https://www.google.com/maps/dir/?api=1&destination=${report.latitude},${report.longitude}&travelmode=driving`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-input)] border px-2.5 py-1.5 text-xs font-semibold text-ceniza-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ceniza)_6%,var(--superficie))] hover:text-ceniza"
-        aria-label="Abrir ruta en Google Maps"
-      >
-        <IconNavigation className="size-3.5" />
-        Cómo llegar en Google Maps
-      </a>
-    </div>
-  );
-}
-
-function createReportMarker(
-  report: PublicReportDTO,
-  selectedId: string | null,
-  onSelect: (id: string) => void,
-): L.Marker {
-  const icon = L.divIcon({
+function createReportIcon(urgency: string, isSelected: boolean): L.DivIcon {
+  const color = urgencyColor[urgency as keyof typeof urgencyColor];
+  const selectedAttr = isSelected ? ' data-selected="true"' : "";
+  return L.divIcon({
     className: "",
-    html: renderToStaticMarkup(
-      <span
-        className="vtn-map-pin relative block size-5.5 rounded-[50%_50%_50%_0] border-[2.5px] border-(--superficie) bg-(--pin-color) -rotate-45 shadow-[0_1px_2px_rgba(31,27,23,0.2),0_6px_14px_rgba(31,27,23,0.28)] transition-[transform,box-shadow] duration-160 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none data-selected:scale-[1.22] data-selected:shadow-[0_0_0_5px_color-mix(in_srgb,var(--pin-color)_18%,transparent),0_8px_20px_rgba(31,27,23,0.32)]"
-        style={{ "--pin-color": urgencyColor[report.urgency] } as React.CSSProperties}
-        data-selected={report.id === selectedId ? true : undefined}
-      >
-        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rounded-full bg-(--superficie) opacity-85" />
-      </span>
-    ),
+    html: `<span class="vtn-map-pin" style="--vtn-pin-color: ${color};"${selectedAttr}><span class="vtn-map-pin-dot"></span></span>`,
     iconSize: [32, 36],
     iconAnchor: [16, 36],
     popupAnchor: [0, -28],
   });
-
-  const marker = L.marker([report.latitude, report.longitude], { icon });
-
-  // Store extra data for cluster colouring
-  (marker as unknown as { vtnUrgency: number }).vtnUrgency = urgencyRank(
-    report.urgency,
-  );
-
-  marker.bindPopup(renderToStaticMarkup(<PopupContent report={report} />), {
-    minWidth: 240,
-    className: "",
-  });
-
-  marker.on("click", () => onSelect(report.id));
-  return marker;
 }
+
+// ── Componente principal ──
 
 export function ReportsMapClusterLayer({
   reports,
@@ -154,78 +77,150 @@ export function ReportsMapClusterLayer({
   onSelect: (id: string) => void;
 }) {
   const map = useMap();
-  const clusterGroupRef = useRef<L.MarkerClusterGroup | null>(null);
-  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const [bounds, setBounds] = useState<[number, number, number, number] | null>(null);
+  const [zoom, setZoom] = useState(map.getZoom());
 
+  // Escuchar eventos del mapa para mantener bounds y zoom actualizados
+  useMapEvents({
+    moveend: () => {
+      const b = map.getBounds();
+      setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+      setZoom(map.getZoom());
+    },
+  });
+
+  // Inicializar bounds al montar
   useEffect(() => {
-    // Create the MarkerClusterGroup once
-    if (!clusterGroupRef.current) {
-      clusterGroupRef.current = L.markerClusterGroup({
-        chunkedLoading: true,
-        maxClusterRadius: 55,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true,
-        disableClusteringAtZoom: 16,
-        iconCreateFunction: (cluster) => {
-          const markers = cluster.getAllChildMarkers();
-          const color = clusterColor(markers);
-          return createClusterIcon(cluster.getChildCount(), color);
-        },
-      });
-      map.addLayer(clusterGroupRef.current);
-    }
+    const b = map.getBounds();
+    setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+    setZoom(map.getZoom());
+  }, [map]);
 
-    const clusterGroup = clusterGroupRef.current;
-    const prevMarkers = markersRef.current;
-    const newMarkers = new Map<string, L.Marker>();
+  // Convertir reportes a features GeoJSON (memoizado)
+  const points = useMemo(() => {
+    return reports.map((report) => ({
+      type: "Feature" as const,
+      properties: {
+        reportId: report.id,
+        urgency: report.urgency,
+        urgencyRank: urgencyRank(report.urgency),
+        report,
+      },
+      geometry: {
+        type: "Point" as const,
+        coordinates: [report.longitude, report.latitude],
+      },
+    }));
+  }, [reports]);
 
-    for (const report of reports) {
-      // Re-use existing marker if possible
-      const existing = prevMarkers.get(report.id);
-      if (existing) {
-        newMarkers.set(report.id, existing);
-        prevMarkers.delete(report.id);
-        continue;
-      }
+  // Índice Supercluster memoizado
+  const index = useMemo(() => {
+    const sc = new Supercluster<MarkerProps, ClusterProps>({
+      radius: 55,
+      maxZoom: 15,
+      map: (props) => ({ maxUrgencyRank: props.urgencyRank }),
+      reduce: (acc, props) => {
+        acc.maxUrgencyRank = Math.max(
+          acc.maxUrgencyRank,
+          props.maxUrgencyRank,
+        );
+      },
+    });
+    sc.load(points);
+    return sc;
+  }, [points]);
 
-      const marker = createReportMarker(report, selectedId, onSelect);
-      newMarkers.set(report.id, marker);
-    }
+  // Calcular clusters y marcadores visibles según viewport actual
+  const clustersAndMarkers = useMemo(() => {
+    if (!bounds) return [];
+    return index.getClusters(
+      [bounds[0], bounds[1], bounds[2], bounds[3]],
+      Math.floor(zoom),
+    );
+  }, [index, bounds, zoom]);
 
-    // Remove markers that are no longer in the list
-    for (const [, marker] of prevMarkers) {
-      clusterGroup.removeLayer(marker);
-    }
+  return (
+    <>
+      {clustersAndMarkers.map((feature) => {
+        const [longitude, latitude] = feature.geometry.coordinates;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const props = feature.properties as any;
 
-    // Add new markers
-    const toAdd: L.Marker[] = [];
-    for (const [, marker] of newMarkers) {
-      toAdd.push(marker);
-    }
-    clusterGroup.addLayers(toAdd);
+        // ── Cluster ──
+        if (props.cluster) {
+          return (
+            <Marker
+              key={`cluster-${feature.id}`}
+              position={[latitude, longitude]}
+              icon={createClusterIcon(props.point_count, props.maxUrgencyRank ?? 0)}
+              eventHandlers={{
+                click: () => {
+                  const expansionZoom = Math.min(
+                    index.getClusterExpansionZoom(feature.id as number),
+                    18,
+                  );
+                  map.setView([latitude, longitude], expansionZoom);
+                },
+              }}
+            />
+          );
+        }
 
-    markersRef.current = newMarkers;
+        // ── Marcador individual ──
+        const { reportId, report } = props as MarkerProps;
+        const isSelected = reportId === selectedId;
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${report.latitude},${report.longitude}&travelmode=driving`;
 
-    return () => {
-      if (clusterGroupRef.current) {
-        map.removeLayer(clusterGroupRef.current);
-        clusterGroupRef.current = null;
-      }
-      markersRef.current.clear();
-    };
-  }, [reports, map, selectedId, onSelect]);
-
-  // Sync selected state via data attribute (Tailwind data-selected: variants)
-  useEffect(() => {
-    for (const [id, marker] of markersRef.current) {
-      const el = marker.getElement();
-      if (!el) continue;
-      const pin = el.querySelector<HTMLElement>(".vtn-map-pin");
-      if (!pin) continue;
-      pin.toggleAttribute("data-selected", id === selectedId);
-    }
-  }, [selectedId]);
-
-  return null;
+        return (
+          <Marker
+            key={`report-${reportId}`}
+            position={[latitude, longitude]}
+            icon={createReportIcon(report.urgency, isSelected)}
+            eventHandlers={{
+              click: () => onSelect(reportId),
+            }}
+          >
+            <Popup minWidth={240}>
+              <div className="flex max-w-72 flex-col gap-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span
+                    className="rounded-input px-2 py-1 text-xs font-bold"
+                    style={{
+                      color: urgencyColor[report.urgency],
+                      background: `color-mix(in srgb, ${urgencyColor[report.urgency]} 12%, var(--superficie))`,
+                    }}
+                  >
+                    {urgencyLabel[report.urgency]}
+                  </span>
+                  <span className="font-mono text-[11px] text-ceniza-3">
+                    {timeAgo(report.createdAt)}
+                  </span>
+                </div>
+                <NeedChips needTypes={report.needTypes} />
+                <p className="text-sm font-semibold leading-snug text-ceniza">
+                  {report.address}
+                </p>
+                <p className="text-xs text-ceniza-3">
+                  {report.peopleCount}{" "}
+                  {report.peopleCount === 1
+                    ? "persona afectada"
+                    : "personas afectadas"}
+                </p>
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-input)] border px-2.5 py-1.5 text-xs font-semibold text-ceniza-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ceniza)_6%,var(--superficie))] hover:text-ceniza"
+                  aria-label="Abrir ruta en Google Maps"
+                >
+                  <IconNavigation className="size-3.5" />
+                  Cómo llegar en Google Maps
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </>
+  );
 }
