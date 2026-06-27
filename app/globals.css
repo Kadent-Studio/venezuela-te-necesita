@@ -90,7 +90,7 @@
   --color-card-foreground: var(--ceniza);
   --color-popover: var(--superficie);
   --color-popover-foreground: var(--ceniza);
-  --color-primary: var(--ceniza);
+  --color-primary: var(--tierra);
   --color-primary-foreground: var(--superficie);
   --color-secondary: var(--polvo);
   --color-secondary-foreground: var(--ceniza);
@@ -103,7 +103,14 @@
   --color-border: var(--borde);
   --color-input: var(--borde-fuerte);
   --color-ring: var(--foco);
-  --radius: 7px;
+  --radius: 11px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 * {
@@ -159,28 +166,7 @@ label {
   outline-offset: 2px;
 }
 
-.vtn-map-pin {
-  display: block;
-  width: 18px;
-  height: 18px;
-  border: 3px solid var(--superficie);
-  border-radius: 999px;
-  background: var(--pin-color);
-  box-shadow:
-    0 0 0 1px rgba(31, 27, 23, 0.16),
-    0 8px 20px rgba(31, 27, 23, 0.28);
-  transform: translate3d(6px, 6px, 0);
-  transition:
-    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
-    box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1);
-}
 
-.vtn-map-pin.is-selected {
-  transform: translate3d(4px, 4px, 0) scale(1.22);
-  box-shadow:
-    0 0 0 5px color-mix(in srgb, var(--pin-color) 18%, transparent),
-    0 10px 24px rgba(31, 27, 23, 0.32);
-}
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
@@ -198,11 +184,7 @@ label {
   margin: 12px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .vtn-map-pin {
-    transition: none;
-  }
-}
+
 
 /* ── MarkerCluster personalizado ──────────────────────────── */
 

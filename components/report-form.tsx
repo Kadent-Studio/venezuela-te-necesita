@@ -23,6 +23,7 @@ import {
 import { IconCamera, IconCheck, IconX } from "@/components/ui/icons";
 import { LocationPicker } from "@/components/location-picker";
 import { useCreateReport } from "@/lib/hooks";
+import { Button } from "./ui/button";
 
 type Errors = Record<string, string>;
 type Point = { latitude: number; longitude: number };
@@ -338,17 +339,17 @@ export function ReportForm({ onSuccess }: { onSuccess?: (id: string) => void }) 
       )}
 
       <div
-        className="sticky bottom-0 mt-2 -mb-4 border-t bg-superficie/95 py-3 pb-safe backdrop-blur sm:-mb-5"
+        className="sticky bottom-0 mt-2 -mb-4 border-t bg-superficie/95 py-3 max-sm:pb-safe backdrop-blur sm:-mb-5"
         style={{ borderColor: "var(--borde)" }}
       >
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={createReport.isPending}
-          className="inline-flex h-12 w-full items-center justify-center rounded-[var(--radius-input)] text-base font-bold text-[var(--superficie)] shadow-sm transition-transform active:scale-[0.99] disabled:opacity-60 sm:h-12"
-          style={{ background: "var(--color-tierra)" }}
+          className="h-12 w-full text-base font-bold active:scale-[0.99] disabled:opacity-60"
         >
           {createReport.isPending ? "Enviando…" : "Enviar solicitud de ayuda"}
-        </button>
+        </Button>
       </div>
     </form>
   );

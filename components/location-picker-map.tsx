@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import L, { type LatLngExpression } from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 
@@ -46,9 +47,13 @@ export function LocationPickerMap({
     () =>
       L.divIcon({
         className: "",
-        html: '<span class="block size-6 rounded-full border-[3px] border-white bg-[var(--color-tierra)] shadow-[0_6px_18px_rgba(31,27,23,0.35)]"></span>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
+        html: renderToStaticMarkup(
+          <span className="relative block size-6.5 rounded-[50%_50%_50%_0] border-[3px] border-(--superficie) bg-(--color-tierra) shadow-[0_2px_4px_rgba(31,27,23,0.2),0_8px_18px_rgba(31,27,23,0.3)] -rotate-45">
+            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2.5 rounded-full bg-(--superficie) opacity-85" />
+          </span>
+        ),
+        iconSize: [38, 42],
+        iconAnchor: [19, 42],
       }),
     [],
   );

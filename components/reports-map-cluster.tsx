@@ -8,7 +8,7 @@ import { useMap } from "react-leaflet";
 import type { PublicReportDTO } from "@/lib/types";
 import { urgencyColor, urgencyLabel } from "@/lib/labels";
 import { timeAgo } from "@/lib/time";
-import { needTypeLabel } from "@/lib/labels";
+
 import { IconNavigation } from "./ui/icons";
 import { NeedChips } from "./ui/badges";
 
@@ -107,6 +107,43 @@ function PopupContent({ report }: { report: PublicReportDTO }) {
   );
 }
 
+function createReportMarker(
+  report: PublicReportDTO,
+  selectedId: string | null,
+  onSelect: (id: string) => void,
+): L.Marker {
+  const icon = L.divIcon({
+    className: "",
+    html: renderToStaticMarkup(
+      <span
+        className="vtn-map-pin relative block size-5.5 rounded-[50%_50%_50%_0] border-[2.5px] border-(--superficie) bg-(--pin-color) -rotate-45 shadow-[0_1px_2px_rgba(31,27,23,0.2),0_6px_14px_rgba(31,27,23,0.28)] transition-[transform,box-shadow] duration-160 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none data-selected:scale-[1.22] data-selected:shadow-[0_0_0_5px_color-mix(in_srgb,var(--pin-color)_18%,transparent),0_8px_20px_rgba(31,27,23,0.32)]"
+        style={{ "--pin-color": urgencyColor[report.urgency] } as React.CSSProperties}
+        data-selected={report.id === selectedId ? true : undefined}
+      >
+        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rounded-full bg-(--superficie) opacity-85" />
+      </span>
+    ),
+    iconSize: [32, 36],
+    iconAnchor: [16, 36],
+    popupAnchor: [0, -28],
+  });
+
+  const marker = L.marker([report.latitude, report.longitude], { icon });
+
+  // Store extra data for cluster colouring
+  (marker as unknown as { vtnUrgency: number }).vtnUrgency = urgencyRank(
+    report.urgency,
+  );
+
+  marker.bindPopup(renderToStaticMarkup(<PopupContent report={report} />), {
+    minWidth: 240,
+    className: "",
+  });
+
+  marker.on("click", () => onSelect(report.id));
+  return marker;
+}
+
 export function ReportsMapClusterLayer({
   reports,
   selectedId,
@@ -152,27 +189,7 @@ export function ReportsMapClusterLayer({
         continue;
       }
 
-      const icon = L.divIcon({
-        className: "",
-        html: `<span class="vtn-map-pin${report.id === selectedId ? " is-selected" : ""}" style="--pin-color: ${urgencyColor[report.urgency]}"></span>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
-        popupAnchor: [0, -14],
-      });
-
-      const marker = L.marker([report.latitude, report.longitude], { icon });
-
-      // Store extra data for cluster colouring
-      (marker as unknown as { vtnUrgency: number }).vtnUrgency = urgencyRank(
-        report.urgency,
-      );
-
-      marker.bindPopup(renderToStaticMarkup(<PopupContent report={report} />), {
-        minWidth: 240,
-        className: "",
-      });
-
-      marker.on("click", () => onSelect(report.id));
+      const marker = createReportMarker(report, selectedId, onSelect);
       newMarkers.set(report.id, marker);
     }
 
@@ -199,14 +216,14 @@ export function ReportsMapClusterLayer({
     };
   }, [reports, map, selectedId, onSelect]);
 
-  // Sync selected state without recreating markers
+  // Sync selected state via data attribute (Tailwind data-selected: variants)
   useEffect(() => {
     for (const [id, marker] of markersRef.current) {
       const el = marker.getElement();
       if (!el) continue;
-      const pin = el.querySelector(".vtn-map-pin");
+      const pin = el.querySelector<HTMLElement>(".vtn-map-pin");
       if (!pin) continue;
-      pin.classList.toggle("is-selected", id === selectedId);
+      pin.toggleAttribute("data-selected", id === selectedId);
     }
   }, [selectedId]);
 
