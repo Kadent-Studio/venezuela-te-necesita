@@ -35,19 +35,22 @@ export interface PublicReportDTO {
   discardReason: DiscardReason | null;
 }
 
-export interface ReportListResponse {
-  items: PublicReportDTO[];
-  nextCursor: string | null;
-}
-
-export interface NearbyReport extends PublicReportDTO {
-  distanceMeters: number;
-}
-
 export interface StatsResponse {
   total: number;
   critical: number;
   inProgress: number;
   verified: number;
   urgency: { CRITICA: number; ALTA: number; MEDIA: number; BAJA: number };
+}
+
+export interface GeocodeResult {
+  id: string;
+  label: string;
+  latitude: number;
+  longitude: number;
+  kind: string;
+}
+
+export interface GeocodeResponse {
+  items: GeocodeResult[];
 }

@@ -4,20 +4,17 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Field, Input } from "@/components/ui/form";
 import { IconLocate, IconPin, IconSearch } from "@/components/ui/icons";
+import { client } from "@/lib/api/client";
+import type { GeocodeResult } from "@/lib/types";
 
 type Point = {
   latitude: number;
   longitude: number;
 };
 
-type GeocodeResult = Point & {
-  id: string;
-  label: string;
-  kind: string;
-};
-
 const Map = dynamic(
-  () => import("@/components/location-picker-map").then((m) => m.LocationPickerMap),
+  () =>
+    import("@/components/location-picker-map").then((m) => m.LocationPickerMap),
   {
     ssr: false,
     loading: () => (
@@ -63,9 +60,9 @@ export function LocationPicker({
     setBusy(true);
     setStatus("Buscando zona...");
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+      const res = await client.api.geocode.$get({ query: { q } });
       if (!res.ok) throw new Error("geocode failed");
-      const data = (await res.json()) as { items: GeocodeResult[] };
+      const data = await res.json();
       setResults(data.items);
       const first = data.items[0];
       if (!first) {
@@ -75,7 +72,9 @@ export function LocationPicker({
       pick({ latitude: first.latitude, longitude: first.longitude }, null);
       setStatus("Zona encontrada. Mueve el pin hasta el punto exacto.");
     } catch {
-      setStatus("No se pudo buscar ahora. Puedes usar tu ubicación o tocar el mapa.");
+      setStatus(
+        "No se pudo buscar ahora. Puedes usar tu ubicación o tocar el mapa.",
+      );
     } finally {
       setBusy(false);
     }
@@ -83,7 +82,9 @@ export function LocationPicker({
 
   function useMyLocation() {
     if (!navigator.geolocation) {
-      setStatus("Tu dispositivo no permite usar ubicación. Busca una zona o toca el mapa.");
+      setStatus(
+        "Tu dispositivo no permite usar ubicación. Busca una zona o toca el mapa.",
+      );
       return;
     }
 
@@ -101,7 +102,9 @@ export function LocationPicker({
         setBusy(false);
       },
       () => {
-        setStatus("No se pudo obtener la ubicación. Busca una zona o toca el mapa.");
+        setStatus(
+          "No se pudo obtener la ubicación. Busca una zona o toca el mapa.",
+        );
         setBusy(false);
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -156,7 +159,10 @@ export function LocationPicker({
               key={item.id}
               type="button"
               onClick={() =>
-                pick({ latitude: item.latitude, longitude: item.longitude }, null)
+                pick(
+                  { latitude: item.latitude, longitude: item.longitude },
+                  null,
+                )
               }
               className="flex items-start gap-2 rounded-[var(--radius-input)] px-2 py-1.5 text-left text-xs font-medium text-ceniza-2 hover:bg-superficie"
             >
@@ -178,11 +184,16 @@ export function LocationPicker({
         <IconPin className="mt-0.5 size-4 shrink-0" />
         <p>
           {status}
-          {accuracyMeters != null ? ` Precisión GPS: ±${accuracyMeters} m.` : ""}
+          {accuracyMeters != null
+            ? ` Precisión GPS: ±${accuracyMeters} m.`
+            : ""}
         </p>
       </div>
       {error && (
-        <p className="text-xs font-medium" style={{ color: "var(--color-critico)" }}>
+        <p
+          className="text-xs font-medium"
+          style={{ color: "var(--color-critico)" }}
+        >
           {error}
         </p>
       )}

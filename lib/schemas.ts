@@ -1,11 +1,11 @@
-import { z } from "zod";
 import {
-  NeedType,
-  Urgency,
   AccessStatus,
-  Stage,
   DiscardReason,
+  NeedType,
+  Stage,
+  Urgency,
 } from "@prisma/client";
+import { z } from "zod";
 
 // Caja delimitadora aproximada de Venezuela. Rechaza coordenadas fuera del país
 // (y de paso el clásico (0,0) de datos basura/spam).
@@ -75,29 +75,21 @@ export const listQuerySchema = z
     lng: z.coerce.number().pipe(longitude).optional(),
     radius: z.coerce.number().min(10).max(50000).default(5000),
   })
-  .refine((v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null), {
-    message: "Indica lat y lng para filtrar por zona",
-    path: ["lat"],
-  });
+  .refine(
+    (v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null),
+    {
+      message: "Indica lat y lng para filtrar por zona",
+      path: ["lat"],
+    },
+  );
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
-
-// Sugeridor de duplicados (GET /api/reports/nearby).
-export const nearbyQuerySchema = z.object({
-  lat: z.coerce.number().pipe(latitude),
-  lng: z.coerce.number().pipe(longitude),
-  radius: z.coerce.number().min(10).max(5000).default(200), // metros
-});
-
-export type NearbyQuery = z.infer<typeof nearbyQuerySchema>;
 
 // Buscador de ciudad/zona para centrar el mapa. La búsqueda real vive en
 // /api/geocode para identificar la app ante Nominatim y limitar el alcance.
 export const geocodeQuerySchema = z.object({
   q: z.string().trim().min(2, "Busca una ciudad o sector").max(120),
 });
-
-export type GeocodeQuery = z.infer<typeof geocodeQuerySchema>;
 
 // Actualización de estado por un coordinador (PATCH /api/admin/reports/[id]).
 // photoUrl admite null explícito para retirar una foto (moderación).
@@ -106,12 +98,10 @@ export const updateReportSchema = z
     verified: z.boolean().optional(),
     stage: z.enum(Stage).optional(),
     discardReason: z.enum(DiscardReason).nullish(),
-    photoUrl: z.null().optional(),
+    photoUrl: z.string().max(2000).nullable().optional(),
   })
   .refine((v) => Object.keys(v).length > 0, "Nada que actualizar")
   .refine(
     (v) => v.stage === Stage.DESCARTADO || !v.discardReason,
     "discardReason solo aplica cuando stage es DESCARTADO",
   );
-
-export type UpdateReportInput = z.infer<typeof updateReportSchema>;
