@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useState } from "react";
 import type { PublicReportDTO } from "@/lib/types";
 import {
   urgencyColor,
@@ -16,6 +17,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   VerifiedBadge,
   NeedChips,
@@ -76,6 +78,7 @@ export function ReportDetailsSheet({
 }
 
 function ReportDetailsBody({ report: r }: { report: PublicReportDTO }) {
+  const [imageOpen, setImageOpen] = useState(false);
   const color = urgencyColor[r.urgency];
   const primary = r.needTypes[0] ?? "OTRO";
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}&travelmode=driving`;
@@ -90,12 +93,19 @@ function ReportDetailsBody({ report: r }: { report: PublicReportDTO }) {
       {/* Tira de urgencia + foto */}
       <div className="relative">
         {r.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={r.photoUrl}
-            alt={`Foto del lugar: ${r.address}`}
-            className="aspect-[16/10] w-full object-cover"
-          />
+          <button
+            type="button"
+            onClick={() => setImageOpen(true)}
+            className="block w-full cursor-zoom-in"
+            aria-label="Abrir imagen a tamaño completo"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={r.photoUrl}
+              alt={`Foto del lugar: ${r.address}`}
+              className="aspect-[16/10] w-full object-cover"
+            />
+          </button>
         ) : (
           <div
             className="aspect-[16/10] w-full"
@@ -262,6 +272,43 @@ function ReportDetailsBody({ report: r }: { report: PublicReportDTO }) {
           Cómo llegar en Google Maps
         </a>
       </div>
+
+      {r.photoUrl ? (
+        <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+          <DialogContent
+            showCloseButton={false}
+            className="max-w-[calc(100%-2rem)] border-0 bg-transparent p-0 shadow-none sm:max-w-[90vw]"
+          >
+            <button
+              type="button"
+              onClick={() => setImageOpen(false)}
+              className="absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
+              aria-label="Cerrar imagen"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={r.photoUrl}
+              alt={`Foto del lugar: ${r.address}`}
+              className="max-h-[85vh] w-full rounded-xl object-contain"
+            />
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </div>
   );
 }

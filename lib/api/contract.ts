@@ -6,29 +6,23 @@ import { latitude, longitude } from "../schemas";
 // Schemas
 // ---------------------------------------------------------------------------
 
-const NeedType = z.enum([
-  "RESCATE",
-  "MEDICO",
-  "AGUA",
-  "COMIDA",
-  "REFUGIO",
-  "OTRO",
-]);
+const NeedType = z
+  .enum(["RESCATE", "MEDICO", "AGUA", "COMIDA", "REFUGIO", "OTRO"])
+  .openapi("NeedType");
 
-const Urgency = z.enum(["CRITICA", "ALTA", "MEDIA", "BAJA"]);
+const Urgency = z.enum(["CRITICA", "ALTA", "MEDIA", "BAJA"]).openapi("Urgency");
 
-const AccessStatus = z.enum([
-  "TRANSITABLE",
-  "BLOQUEADA",
-  "VEHICULO_ESPECIAL",
-  "DESCONOCIDA",
-]);
+const AccessStatus = z
+  .enum(["TRANSITABLE", "BLOQUEADA", "VEHICULO_ESPECIAL", "DESCONOCIDA"])
+  .openapi("AccessStatus");
 
-const Stage = z.enum(["NUEVO", "EN_ATENCION", "RESUELTO", "DESCARTADO"]);
+const Stage = z
+  .enum(["NUEVO", "EN_ATENCION", "RESUELTO", "DESCARTADO"])
+  .openapi("Stage");
 
 const DiscardReason = z
   .enum(["DUPLICADO", "FALSO", "FUERA_DE_ALCANCE"])
-  .nullable();
+  .openapi("DiscardReason");
 
 export const Report = z
   .object({
@@ -55,7 +49,7 @@ export const Report = z
     verifiedAt: z.string().nullable(),
     stage: Stage,
     handledBy: z.string().nullable(),
-    discardReason: DiscardReason,
+    discardReason: DiscardReason.nullable(),
   })
   .openapi("Report");
 
