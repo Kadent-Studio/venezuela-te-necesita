@@ -7,7 +7,7 @@ import type {
 } from "@prisma/client";
 
 // Forma del reporte público tal como llega por JSON (fechas como string).
-// Espejo de toPublicReport() en lib/serialize.ts — sin contacto ni ipHash.
+// Espejo de toPublicReport() en lib/serialize.ts — sin ipHash.
 export interface PublicReportDTO {
   id: string;
   createdAt: string;
@@ -25,6 +25,8 @@ export interface PublicReportDTO {
   hasElderly: boolean;
   access: AccessStatus;
   photoUrl: string | null;
+  contactName: string;
+  contactPhone: string;
   verified: boolean;
   verifiedBy: string | null;
   verifiedAt: string | null;

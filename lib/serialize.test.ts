@@ -40,18 +40,20 @@ function makeReport(overrides: Partial<Report> = {}): Report {
 }
 
 describe("toPublicReport (garantía de privacidad)", () => {
-  it("omite contactName, contactPhone e ipHash", () => {
+  it("omite el ipHash", () => {
     const pub = toPublicReport(makeReport());
-    expect(pub).not.toHaveProperty("contactName");
-    expect(pub).not.toHaveProperty("contactPhone");
     expect(pub).not.toHaveProperty("ipHash");
   });
 
-  it("no deja rastro del teléfono en ningún valor serializado", () => {
+  it("no deja rastro del ipHash en ningún valor serializado", () => {
     const pub = toPublicReport(makeReport());
-    expect(JSON.stringify(pub)).not.toContain("1234567");
-    expect(JSON.stringify(pub)).not.toContain("María Pérez");
     expect(JSON.stringify(pub)).not.toContain("deadbeef");
+  });
+
+  it("expone el contacto (medio para coordinar el acceso al lugar)", () => {
+    const pub = toPublicReport(makeReport());
+    expect(pub.contactName).toBe("María Pérez");
+    expect(pub.contactPhone).toBe("+58 412 1234567");
   });
 
   it("conserva los campos públicos", () => {
@@ -63,10 +65,11 @@ describe("toPublicReport (garantía de privacidad)", () => {
     expect(pub.stage).toBe(Stage.NUEVO);
   });
 
-  it("sanitiza listas completas", () => {
+  it("sanitiza listas completas (sin ipHash)", () => {
     const list = toPublicReports([makeReport(), makeReport()]);
     for (const pub of list) {
-      expect(pub).not.toHaveProperty("contactPhone");
+      expect(pub).not.toHaveProperty("ipHash");
+      expect(pub.contactPhone).toBe("+58 412 1234567");
     }
   });
 });

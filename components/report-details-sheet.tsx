@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import type { PublicReportDTO } from "@/lib/types";
 import {
   urgencyColor,
@@ -28,7 +29,20 @@ import {
   IconElder,
   IconPin,
   IconNavigation,
+  IconPhone,
+  IconWhatsApp,
 } from "@/components/ui/icons";
+
+const ReportLocationMap = dynamic(
+  () =>
+    import("@/components/report-location-map").then((m) => m.ReportLocationMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-full w-full animate-pulse bg-polvo" aria-hidden />
+    ),
+  },
+);
 
 export function ReportDetailsSheet({
   report,
@@ -65,6 +79,11 @@ function ReportDetailsBody({ report: r }: { report: PublicReportDTO }) {
   const color = urgencyColor[r.urgency];
   const primary = r.needTypes[0] ?? "OTRO";
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${r.latitude},${r.longitude}&travelmode=driving`;
+
+  // Teléfono para enlaces: tel: conserva el "+", wa.me solo dígitos.
+  const telHref = `tel:${r.contactPhone.replace(/[^\d+]/g, "")}`;
+  const waDigits = r.contactPhone.replace(/\D/g, "");
+  const waHref = `https://wa.me/${waDigits}`;
 
   return (
     <div className="flex h-full flex-col">
@@ -168,6 +187,16 @@ function ReportDetailsBody({ report: r }: { report: PublicReportDTO }) {
           <p className="mt-1 font-mono text-[11px] tabular-nums text-ceniza-4">
             {r.latitude.toFixed(5)}, {r.longitude.toFixed(5)}
           </p>
+          <a
+            href={directionsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 block aspect-[16/10] w-full overflow-hidden rounded-[var(--radius-input)] border"
+            style={{ borderColor: "var(--borde-fuerte)" }}
+            aria-label="Abrir la ubicación en Google Maps"
+          >
+            <ReportLocationMap report={r} />
+          </a>
         </Section>
 
         {/* Descripción */}
@@ -179,15 +208,43 @@ function ReportDetailsBody({ report: r }: { report: PublicReportDTO }) {
           </Section>
         ) : null}
 
-        {/* Contacto — privado, no expuesto en API pública */}
+        {/* Contacto — visible: medio para comunicarse con quien da acceso al lugar */}
         <Section title="Contacto">
           <div
-            className="rounded-[var(--radius-input)] border border-dashed p-3 text-xs text-ceniza-3"
+            className="flex flex-col gap-3 rounded-[var(--radius-input)] border p-3"
             style={{ borderColor: "var(--borde-fuerte)" }}
           >
-            La información de contacto solo es visible para coordinadores
-            autorizados. Si eres parte del equipo de respuesta, inicia sesión
-            para verla.
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-semibold text-ceniza">
+                {r.contactName}
+              </span>
+              <a
+                href={telHref}
+                className="font-mono text-sm tabular-nums text-ceniza-2 underline-offset-2 hover:underline"
+              >
+                {r.contactPhone}
+              </a>
+            </div>
+            <div className="flex gap-2">
+              <a
+                href={telHref}
+                className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-input)] border text-sm font-semibold text-ceniza transition-colors hover:bg-[var(--borde-suave)]"
+                style={{ borderColor: "var(--borde-fuerte)" }}
+              >
+                <IconPhone className="size-4 text-ceniza-3" />
+                Llamar
+              </a>
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[var(--radius-input)] text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                style={{ background: "#25D366" }}
+              >
+                <IconWhatsApp className="size-4" />
+                WhatsApp
+              </a>
+            </div>
           </div>
         </Section>
       </div>
