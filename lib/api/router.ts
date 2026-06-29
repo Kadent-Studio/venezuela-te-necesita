@@ -83,8 +83,8 @@ export const publicV1 = route.openapiRoutes([
 ]);
 
 publicV1
-  .doc("/docs", {
-    openapi: "3.0.0",
+  .doc31("/docs", {
+    openapi: "3.1.0",
     info: {
       title: "Unidos Venezuela API",
       version: "1.0.0",
