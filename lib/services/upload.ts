@@ -25,7 +25,6 @@ export async function generateUploadToken(
         maximumSizeInBytes: MAX_BYTES,
         addRandomSuffix: true,
       }),
-      onUploadCompleted: async () => {},
     });
     return { ok: true, data: result };
   } catch (error) {
