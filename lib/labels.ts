@@ -4,6 +4,9 @@ import type {
   AccessStatus,
   Stage,
   DiscardReason,
+  SupplyType,
+  StockLevel,
+  CentroScope,
 } from "@prisma/client";
 
 export const needTypeLabel: Record<NeedType, string> = {
@@ -75,3 +78,82 @@ export const accessOrder: AccessStatus[] = [
   "BLOQUEADA",
   "DESCONOCIDA",
 ];
+
+// ---------------------------------------------------------------------------
+// Centros de acopio
+// ---------------------------------------------------------------------------
+
+export const supplyTypeLabel: Record<SupplyType, string> = {
+  AGUA: "Agua potable",
+  ALIMENTOS: "Alimentos no perecederos",
+  MEDICINAS: "Medicinas / insumos",
+  PANALES: "Pañales",
+  HIGIENE: "Artículos de higiene",
+  ROPA: "Ropa y calzado",
+  COLCHONES: "Colchones / cobijas",
+  AGUA_ASEO: "Agua para aseo",
+  COCINA: "Utensilios de cocina",
+  ENERGIA: "Linternas / pilas / energía",
+  LIMPIEZA: "Productos de limpieza",
+  OTRO: "Otro",
+};
+
+// Orden del catálogo en formularios y semáforos.
+export const supplyTypeOrder: SupplyType[] = [
+  "AGUA",
+  "ALIMENTOS",
+  "MEDICINAS",
+  "PANALES",
+  "HIGIENE",
+  "ROPA",
+  "COLCHONES",
+  "AGUA_ASEO",
+  "COCINA",
+  "ENERGIA",
+  "LIMPIEZA",
+  "OTRO",
+];
+
+export const scopeLabel: Record<CentroScope, string> = {
+  VENEZUELA: "En Venezuela",
+  EXTERIOR: "En el exterior",
+};
+
+export const stockLevelLabel: Record<StockLevel, string> = {
+  URGENTE: "Urgente",
+  NECESITA: "Necesita",
+  SUFICIENTE: "Suficiente",
+  SOBRADO: "Sobrado",
+};
+
+// Lectura para el donante de cada nivel.
+export const stockLevelHint: Record<StockLevel, string> = {
+  URGENTE: "Falta ahora — traer con prioridad",
+  NECESITA: "Hace falta",
+  SUFICIENTE: "Tienen lo necesario — no urge",
+  SOBRADO: "Saturado — no traer más",
+};
+
+// Token de color del semáforo por nivel (reusa la paleta de triaje).
+export const stockLevelColor: Record<StockLevel, string> = {
+  URGENTE: "var(--color-critico)",
+  NECESITA: "var(--color-alto)",
+  SUFICIENTE: "var(--color-bajo)",
+  SOBRADO: "var(--color-ceniza-3)",
+};
+
+// Urgente primero (lo accionable), sobrado al final (lo que se evita).
+export const stockLevelOrder: StockLevel[] = [
+  "URGENTE",
+  "NECESITA",
+  "SUFICIENTE",
+  "SOBRADO",
+];
+
+// Rango para priorizar/colorear un centro por su ítem más urgente (0 = menor).
+export const stockLevelRank: Record<StockLevel, number> = {
+  SOBRADO: 0,
+  SUFICIENTE: 1,
+  NECESITA: 2,
+  URGENTE: 3,
+};

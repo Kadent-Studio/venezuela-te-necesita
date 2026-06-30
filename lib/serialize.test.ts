@@ -4,9 +4,16 @@ import {
   Urgency,
   AccessStatus,
   Stage,
+  type Centro,
+  type CentroItem,
   type Report,
 } from "@prisma/client";
-import { toPublicReport, toPublicReports } from "./serialize";
+import {
+  toPublicCentro,
+  toPublicReport,
+  toPublicReports,
+  type CentroWithItems,
+} from "./serialize";
 
 function makeReport(overrides: Partial<Report> = {}): Report {
   return {
@@ -71,5 +78,72 @@ describe("toPublicReport (garantía de privacidad)", () => {
       expect(pub).not.toHaveProperty("ipHash");
       expect(pub.contactPhone).toBe("+58 412 1234567");
     }
+  });
+});
+
+function makeCentro(overrides: Partial<Centro> = {}): CentroWithItems {
+  const item = (
+    over: Partial<CentroItem> = {},
+  ): CentroItem => ({
+    id: "item0000000000000000000",
+    centroId: "centro000000000000000000",
+    supplyType: "AGUA",
+    level: "NECESITA",
+    note: null,
+    updatedAt: new Date("2026-06-30T12:00:00Z"),
+    ...over,
+  });
+
+  return {
+    id: "centro000000000000000000",
+    createdAt: new Date("2026-06-30T12:00:00Z"),
+    updatedAt: new Date("2026-06-30T12:00:00Z"),
+    name: "Liceo Bolívar",
+    description: "Coliseo techado",
+    latitude: 10.25,
+    longitude: -67.6,
+    accuracyMeters: null,
+    address: "Maracay, Av. Bolívar",
+    photoUrl: "https://blob.example/centro.jpg",
+    encargadoName: "María G.",
+    encargadoPhone: "+58 412 1234567",
+    horario: "Lun–Sáb 8am–6pm",
+    manageToken: "SECRET_TOKEN_xyz",
+    verified: false,
+    verifiedBy: null,
+    verifiedAt: null,
+    lastStockUpdatedAt: new Date("2026-06-30T12:00:00Z"),
+    ipHash: "deadbeef",
+    items: [item({ supplyType: "AGUA", level: "URGENTE" }), item({ supplyType: "OTRO", note: "carpas" })],
+    ...overrides,
+  } as CentroWithItems;
+}
+
+describe("toPublicCentro (garantía de privacidad)", () => {
+  it("omite el manageToken y el ipHash", () => {
+    const pub = toPublicCentro(makeCentro());
+    expect(pub).not.toHaveProperty("manageToken");
+    expect(pub).not.toHaveProperty("ipHash");
+  });
+
+  it("no deja rastro del token ni del ipHash en el JSON", () => {
+    const json = JSON.stringify(toPublicCentro(makeCentro()));
+    expect(json).not.toContain("SECRET_TOKEN_xyz");
+    expect(json).not.toContain("deadbeef");
+  });
+
+  it("expone el contacto del encargado (público) y el horario", () => {
+    const pub = toPublicCentro(makeCentro());
+    expect(pub.encargadoName).toBe("María G.");
+    expect(pub.encargadoPhone).toBe("+58 412 1234567");
+    expect(pub.horario).toBe("Lun–Sáb 8am–6pm");
+  });
+
+  it("aplana los ítems a supplyType/level/note", () => {
+    const pub = toPublicCentro(makeCentro());
+    expect(pub.items).toEqual([
+      { supplyType: "AGUA", level: "URGENTE", note: null },
+      { supplyType: "OTRO", level: "NECESITA", note: "carpas" },
+    ]);
   });
 });

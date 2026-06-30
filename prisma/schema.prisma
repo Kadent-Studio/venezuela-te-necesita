@@ -66,6 +66,119 @@ model Report {
   @@index([createdAt, id]) // paginación por cursor
 }
 
+// ---------------------------------------------------------------------------
+// Centros de acopio
+// ---------------------------------------------------------------------------
+
+model Centro {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Identidad
+  name        String // nombre del centro (p. ej. "Liceo Bolívar")
+  description String? // notas, instrucciones de entrega
+
+  // Ámbito y ubicación administrativa (un centro puede estar en el exterior:
+  // puntos de acopio de la diáspora que recogen ayuda para Venezuela).
+  scope   CentroScope? // VENEZUELA | EXTERIOR
+  country String? // país (ej. "Venezuela", "Estados Unidos")
+  state   String? // estado / provincia
+  city    String? // ciudad
+
+  // Ubicación geográfica (mismo patrón que Report, pero coords globales)
+  latitude       Float
+  longitude      Float
+  accuracyMeters Int?
+  address        String // referencia / dirección legible (obligatorio)
+  // GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography) STORED
+  location       Unsupported("geography(Point, 4326)")?
+
+  // Evidencia (pública)
+  photoUrl String? // foto del centro (Vercel Blob, opcional)
+
+  // Qué recibe (texto libre — como llega de fuentes externas; el semáforo
+  // estructurado de CentroItem es la capa de enriquecimiento).
+  receivesNote String?
+
+  // Contacto (PÚBLICO — para coordinar entregas). Todo opcional: las fuentes
+  // externas no siempre traen un encargado designado.
+  encargadoName  String? // persona encargada in-situ
+  encargadoPhone String? // teléfono / WhatsApp del encargado
+  phone          String? // línea general del centro
+  contactHandle  String? // contacto alterno (ej. @instagram, nombre)
+  horario        String? // texto libre (p. ej. "Lun–Sáb 8am–6pm")
+
+  // Gestión sin login (PRIVADO — nunca en respuestas públicas)
+  manageToken String @unique // enlace secreto del encargado
+
+  // Verificación (cableado diferido — espeja Report.verified)
+  verified           Boolean   @default(false)
+  verifiedBy         String?
+  verifiedAt         DateTime?
+  verificationsCount Int       @default(0) // nº de confirmaciones de la fuente
+
+  // Vigencia
+  endsAt DateTime? // fecha en que el centro deja de operar (campañas con cierre)
+
+  // Frescura del inventario
+  lastStockUpdatedAt DateTime @default(now())
+
+  // Procedencia (import idempotente de CSV de cualquier fuente)
+  source       String? // identificador de la fuente (ej. "acopios-csv")
+  externalId   String? // id original en la fuente
+  sourceHandle String? // quién aportó/cura el registro (ej. @usuario)
+
+  // Abuso
+  ipHash String? // HMAC de IP, nunca la IP cruda
+
+  items CentroItem[]
+
+  @@unique([source, externalId]) // dedupe al re-importar
+  @@index([createdAt, id]) // paginación por cursor
+  @@index([scope])
+}
+
+model CentroItem {
+  id         String     @id @default(cuid())
+  centroId   String
+  centro     Centro     @relation(fields: [centroId], references: [id], onDelete: Cascade)
+  supplyType SupplyType
+  level      StockLevel @default(NECESITA)
+  note       String? // detalle, sobre todo para OTRO ("pañales talla 2")
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([centroId, supplyType]) // un nivel por ítem por centro
+  @@index([supplyType, level]) // filtro donante: "¿quién necesita Agua?"
+}
+
+enum CentroScope {
+  VENEZUELA
+  EXTERIOR
+}
+
+enum SupplyType {
+  AGUA // Agua potable
+  ALIMENTOS // Alimentos no perecederos
+  MEDICINAS // Medicinas / insumos médicos
+  PANALES // Pañales (bebé/adulto)
+  HIGIENE // Artículos de higiene personal
+  ROPA // Ropa y calzado
+  COLCHONES // Colchones / cobijas
+  AGUA_ASEO // Agua para aseo
+  COCINA // Utensilios de cocina
+  ENERGIA // Linternas / pilas / energía
+  LIMPIEZA // Productos de limpieza
+  OTRO // Otro (con nota)
+}
+
+enum StockLevel {
+  URGENTE // falta ya — traer con prioridad
+  NECESITA // hace falta (por defecto al crear)
+  SUFICIENTE // tienen lo necesario — no urge
+  SOBRADO // saturado — NO traer más
+}
+
 enum NeedType {
   RESCATE
   MEDICO

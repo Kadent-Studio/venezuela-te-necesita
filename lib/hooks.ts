@@ -1,4 +1,4 @@
-import type { PublicReportDTO } from "@/lib/types";
+import type { PublicCentroDTO, PublicReportDTO } from "@/lib/types";
 import {
   useInfiniteQuery,
   useMutation,
@@ -137,5 +137,115 @@ export function useReportsStats() {
     queryKey: reportKeys.stats(),
     queryFn: fetchStats,
     staleTime: 30_000,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Centros de acopio
+// ---------------------------------------------------------------------------
+
+export const centroKeys = {
+  all: ["centros"] as const,
+  map: () => ["centros", "map"] as const,
+  detail: (id: string) => ["centros", id] as const,
+};
+
+async function fetchCentrosMap(): Promise<PublicCentroDTO[]> {
+  const res = await client.api.v1.centros.$get({ query: { limit: 50 } });
+  if (!res.ok) throw new Error("Error al cargar centros");
+  const data = await res.json();
+  return data.items;
+}
+
+async function fetchCentro(id: string): Promise<PublicCentroDTO> {
+  const res = await fetch(`/api/v1/centros/${id}`);
+  if (!res.ok) throw new Error("Error al cargar el centro");
+  return res.json() as Promise<PublicCentroDTO>;
+}
+
+/** Todos los centros para el mapa (máx 50). El filtro por ítem/nivel se aplica en cliente. */
+export function useCentrosMap() {
+  return useQuery({
+    queryKey: centroKeys.map(),
+    queryFn: fetchCentrosMap,
+  });
+}
+
+/** Un centro por ID (lectura pública; usado por la página de gestión). */
+export function useCentro(id: string | null) {
+  return useQuery({
+    queryKey: centroKeys.detail(id ?? ""),
+    queryFn: () => fetchCentro(id!),
+    enabled: id !== null,
+  });
+}
+
+type FieldErrors = { error?: string; fieldErrors?: Record<string, string[]> };
+
+/** Mutación para registrar un centro. Devuelve id + enlace de gestión. */
+export function useCreateCentro() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const res = await fetch("/api/centros", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw (await res.json()) as FieldErrors;
+      return res.json() as Promise<{ id: string; manageToken: string }>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: centroKeys.all });
+    },
+  });
+}
+
+/** Mutación para actualizar los niveles del semáforo (encargado, vía token). */
+export function useUpdateCentroItems(id: string, token: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (items: Record<string, unknown>[]) => {
+      const res = await fetch(`/api/centros/${id}/items`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Manage-Token": token,
+        },
+        body: JSON.stringify({ items }),
+      });
+      if (!res.ok) throw (await res.json()) as FieldErrors;
+      return res.json() as Promise<PublicCentroDTO>;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(centroKeys.detail(id), data);
+      queryClient.invalidateQueries({ queryKey: centroKeys.map() });
+    },
+  });
+}
+
+/** Mutación para actualizar contacto/horario/datos del centro (encargado, vía token). */
+export function useUpdateCentro(id: string, token: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const res = await fetch(`/api/centros/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Manage-Token": token,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw (await res.json()) as FieldErrors;
+      return res.json() as Promise<PublicCentroDTO>;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(centroKeys.detail(id), data);
+      queryClient.invalidateQueries({ queryKey: centroKeys.map() });
+    },
   });
 }

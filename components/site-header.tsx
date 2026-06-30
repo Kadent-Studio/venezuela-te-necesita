@@ -9,6 +9,7 @@ import { IconPin } from "@/components/ui/icons";
 const NAV_LINKS = [
   { href: "/", label: "Reportes" },
   { href: "/mapa", label: "Mapa" },
+  { href: "/centros", label: "Centros" },
 ] as const;
 
 export function SiteHeader() {

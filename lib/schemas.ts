@@ -1,8 +1,11 @@
 import {
   AccessStatus,
+  CentroScope,
   DiscardReason,
   NeedType,
   Stage,
+  StockLevel,
+  SupplyType,
   Urgency,
 } from "@prisma/client";
 import { z } from "zod";
@@ -26,8 +29,20 @@ export const longitude = z
   .min(VENEZUELA_BOUNDS.minLng, "Longitud fuera de Venezuela")
   .max(VENEZUELA_BOUNDS.maxLng, "Longitud fuera de Venezuela");
 
+// Coordenadas globales: los centros de acopio pueden estar en el exterior
+// (puntos de la diáspora), así que no se restringen a Venezuela.
+export const anyLatitude = z
+  .number()
+  .min(-90, "Latitud inválida")
+  .max(90, "Latitud inválida");
+
+export const anyLongitude = z
+  .number()
+  .min(-180, "Longitud inválida")
+  .max(180, "Longitud inválida");
+
 // Teléfono permisivo: dígitos, +, espacios y guiones (formato VE flexible).
-const phone = z
+export const phone = z
   .string()
   .trim()
   .min(7, "Teléfono demasiado corto")
@@ -105,3 +120,102 @@ export const updateReportSchema = z
     (v) => v.stage === Stage.DESCARTADO || !v.discardReason,
     "discardReason solo aplica cuando stage es DESCARTADO",
   );
+
+// ---------------------------------------------------------------------------
+// Centros de acopio
+// ---------------------------------------------------------------------------
+
+// Nivel de un ítem del semáforo (el donante ve qué falta y qué sobra).
+const centroItemInput = z.object({
+  supplyType: z.enum(SupplyType),
+  level: z.enum(StockLevel),
+  note: z.string().trim().max(300).optional(),
+});
+
+// Creación de un centro (formulario público + POST /api/centros).
+// `items` es opcional: el servicio siembra los 12 ítems en NECESITA y aplica
+// los niveles enviados como sobrescritura. Coordenadas globales (puede estar
+// en el exterior). El encargado es opcional: las fuentes externas no siempre
+// traen una persona designada.
+export const createCentroSchema = z.object({
+  name: z.string().trim().min(2, "Indica el nombre del centro").max(160),
+  description: z.string().trim().max(2000).optional(),
+
+  scope: z.enum(CentroScope).optional(),
+  country: z.string().trim().max(80).optional(),
+  state: z.string().trim().max(120).optional(),
+  city: z.string().trim().max(120).optional(),
+
+  latitude: anyLatitude,
+  longitude: anyLongitude,
+  accuracyMeters: z.number().int().positive().max(100000).optional(),
+  address: z.string().trim().min(3, "Indica una referencia").max(400),
+
+  photoUrl: z.string().url().max(2000).optional(),
+
+  receivesNote: z.string().trim().max(4000).optional(),
+
+  encargadoName: z.string().trim().min(2).max(160).optional(),
+  encargadoPhone: phone.optional(),
+  phone: phone.optional(),
+  contactHandle: z.string().trim().max(160).optional(),
+  horario: z.string().trim().max(160).optional(),
+
+  endsAt: z.coerce.date().optional(),
+
+  items: z.array(centroItemInput).max(20).optional(),
+});
+
+export type CreateCentroInput = z.infer<typeof createCentroSchema>;
+
+// Listado público de centros (GET /api/centros). Filtro opcional por ítem/nivel
+// y por ámbito/país.
+export const listCentrosQuerySchema = z.object({
+  supplyType: z.enum(SupplyType).optional(),
+  level: z.enum(StockLevel).optional(),
+  scope: z.enum(CentroScope).optional(),
+  country: z.string().trim().max(80).optional(),
+  cursor: z.string().cuid().optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export type ListCentrosQuery = z.infer<typeof listCentrosQuerySchema>;
+
+// Actualización de campos operativos por el encargado (PATCH, token).
+export const updateCentroSchema = z
+  .object({
+    name: z.string().trim().min(2).max(160).optional(),
+    description: z.string().trim().max(2000).nullish(),
+    scope: z.enum(CentroScope).nullish(),
+    country: z.string().trim().max(80).nullish(),
+    state: z.string().trim().max(120).nullish(),
+    city: z.string().trim().max(120).nullish(),
+    receivesNote: z.string().trim().max(4000).nullish(),
+    encargadoName: z.string().trim().min(2).max(160).nullish(),
+    encargadoPhone: phone.nullish(),
+    phone: phone.nullish(),
+    contactHandle: z.string().trim().max(160).nullish(),
+    horario: z.string().trim().max(160).nullish(),
+    photoUrl: z.string().max(2000).nullable().optional(),
+    latitude: anyLatitude.optional(),
+    longitude: anyLongitude.optional(),
+    accuracyMeters: z.number().int().positive().max(100000).nullish(),
+    address: z.string().trim().min(3).max(400).optional(),
+    endsAt: z.coerce.date().nullish(),
+  })
+  .refine((v) => Object.keys(v).length > 0, "Nada que actualizar")
+  .refine(
+    (v) =>
+      (v.latitude == null && v.longitude == null) ||
+      (v.latitude != null && v.longitude != null),
+    { message: "Indica latitud y longitud juntas", path: ["latitude"] },
+  );
+
+export type UpdateCentroInput = z.infer<typeof updateCentroSchema>;
+
+// Actualización de los niveles del semáforo (PATCH /items, token).
+export const updateCentroItemsSchema = z.object({
+  items: z.array(centroItemInput).min(1, "Indica al menos un ítem").max(20),
+});
+
+export type UpdateCentroItemsInput = z.infer<typeof updateCentroItemsSchema>;

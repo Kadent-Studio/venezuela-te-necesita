@@ -252,3 +252,146 @@ export const statsContract = createRoute({
     },
   },
 });
+
+// ---------------------------------------------------------------------------
+// Centros de acopio
+// ---------------------------------------------------------------------------
+
+const SupplyType = z
+  .enum([
+    "AGUA",
+    "ALIMENTOS",
+    "MEDICINAS",
+    "PANALES",
+    "HIGIENE",
+    "ROPA",
+    "COLCHONES",
+    "AGUA_ASEO",
+    "COCINA",
+    "ENERGIA",
+    "LIMPIEZA",
+    "OTRO",
+  ])
+  .openapi("SupplyType");
+
+const StockLevel = z
+  .enum(["URGENTE", "NECESITA", "SUFICIENTE", "SOBRADO"])
+  .openapi("StockLevel");
+
+const CentroScope = z.enum(["VENEZUELA", "EXTERIOR"]).openapi("CentroScope");
+
+const CentroItem = z
+  .object({
+    supplyType: SupplyType,
+    level: StockLevel,
+    note: z.string().nullable(),
+  })
+  .openapi("CentroItem");
+
+export const Centro = z
+  .object({
+    id: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    name: z.string(),
+    description: z.string().nullable(),
+    scope: CentroScope.nullable(),
+    country: z.string().nullable(),
+    state: z.string().nullable(),
+    city: z.string().nullable(),
+    latitude: z.number(),
+    longitude: z.number(),
+    accuracyMeters: z.number().nullable(),
+    address: z.string(),
+    photoUrl: z.string().nullable(),
+    receivesNote: z.string().nullable(),
+    encargadoName: z.string().nullable(),
+    encargadoPhone: z.string().nullable(),
+    phone: z.string().nullable(),
+    contactHandle: z.string().nullable(),
+    horario: z.string().nullable(),
+    verified: z.boolean(),
+    verifiedBy: z.string().nullable(),
+    verifiedAt: z.string().nullable(),
+    verificationsCount: z.number(),
+    endsAt: z.string().nullable(),
+    lastStockUpdatedAt: z.string(),
+    source: z.string().nullable(),
+    externalId: z.string().nullable(),
+    sourceHandle: z.string().nullable(),
+    items: z.array(CentroItem),
+  })
+  .openapi("Centro");
+
+export const CentroListResponse = z
+  .object({
+    items: z.array(Centro),
+    nextCursor: z.string().nullable(),
+  })
+  .openapi("CentroListResponse");
+
+// GET /centros/{id}
+const GetCentroParams = z
+  .object({
+    id: z.string().openapi({
+      description: "El ID del centro de acopio",
+      param: { name: "id", in: "path" },
+    }),
+  })
+  .openapi("GetCentroParams");
+
+export const getCentroContract = createRoute({
+  method: "get",
+  path: "/centros/{id}",
+  request: {
+    params: GetCentroParams,
+  },
+  responses: {
+    200: {
+      content: { "application/json": { schema: Centro } },
+      description: "Centro encontrado",
+    },
+    404: {
+      content: {
+        "application/json": {
+          schema: z.object({ error: z.string() }),
+        },
+      },
+      description: "Centro no encontrado",
+    },
+  },
+});
+
+// GET /centros — listado paginado con filtro por ítem/nivel
+export const ListCentrosQuerySchema = z
+  .object({
+    supplyType: SupplyType.optional(),
+    level: StockLevel.optional(),
+    scope: CentroScope.optional(),
+    country: z.string().optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  })
+  .openapi("ListCentrosQuery");
+
+export const listCentrosContract = createRoute({
+  method: "get",
+  path: "/centros",
+  request: {
+    query: ListCentrosQuerySchema,
+  },
+  responses: {
+    200: {
+      content: { "application/json": { schema: CentroListResponse } },
+      description: "Listado paginado de centros de acopio",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: z.object({ error: z.string(), details: z.unknown() }),
+        },
+      },
+      description: "Parámetros inválidos",
+    },
+  },
+});

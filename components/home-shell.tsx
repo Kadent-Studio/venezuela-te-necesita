@@ -67,6 +67,13 @@ function Hero() {
             >
               Ver el mapa
             </a>
+            <a
+              href="/centros"
+              className="inline-flex h-12 items-center justify-center rounded-[var(--radius-input)] border px-5 text-base font-semibold text-ceniza-2 hover:text-ceniza sm:h-14"
+              style={{ borderColor: "var(--borde-fuerte)" }}
+            >
+              Centros de acopio
+            </a>
           </div>
         </div>
         <HeroLegend />

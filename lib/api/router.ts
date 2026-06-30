@@ -1,3 +1,4 @@
+import { getCentroById, listCentros } from "@/lib/services/centros";
 import {
   getNearbyReports,
   getReportById,
@@ -9,7 +10,9 @@ import { defineOpenAPIRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
 import { getBaseUrl } from "../url";
 import {
+  getCentroContract,
   getReportContract,
+  listCentrosContract,
   listReportsContract,
   nearbyContract,
   statsContract,
@@ -63,6 +66,35 @@ export const statsRoute = defineOpenAPIRoute({
   },
 });
 
+// GET /centros/{id} — un centro de acopio
+export const getCentroRoute = defineOpenAPIRoute({
+  route: getCentroContract,
+  async handler(c) {
+    const { id } = c.req.valid("param");
+    const result = await getCentroById(id);
+    if (!result.ok) {
+      return c.json({ error: result.error }, result.status as 404);
+    }
+    return c.json(result.data, 200);
+  },
+});
+
+// GET /centros — listado paginado con filtro por ítem/nivel
+export const listCentrosRoute = defineOpenAPIRoute({
+  route: listCentrosContract,
+  async handler(c) {
+    const query = c.req.valid("query");
+    const result = await listCentros(query);
+    if (!result.ok) {
+      return c.json(
+        { error: result.error, details: null },
+        result.status as 400,
+      );
+    }
+    return c.json(result.data, 200);
+  },
+});
+
 const route = new OpenAPIHono();
 
 route.use(cors({ origin: "*" }));
@@ -72,6 +104,8 @@ export const publicV1 = route.openapiRoutes([
   getReportRoute,
   listReportsRoute,
   nearbyRoute,
+  getCentroRoute,
+  listCentrosRoute,
 ]);
 
 const apiUrl = `${getBaseUrl()}/api/v1`;

@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { NeedType, Urgency, AccessStatus, Stage } from "@prisma/client";
-import { createReportSchema, listQuerySchema, updateReportSchema } from "./schemas";
+import {
+  createCentroSchema,
+  createReportSchema,
+  listQuerySchema,
+  updateCentroItemsSchema,
+  updateCentroSchema,
+  updateReportSchema,
+} from "./schemas";
 
 const validBase = {
   latitude: 10.6,
@@ -83,5 +90,90 @@ describe("listQuerySchema — filtro espacial", () => {
       radius: "1000000",
     });
     expect(r.success).toBe(false);
+  });
+});
+
+const validCentro = {
+  name: "Liceo Bolívar",
+  latitude: 10.25,
+  longitude: -67.6,
+  address: "Maracay, Av. Bolívar",
+  encargadoName: "María G.",
+  encargadoPhone: "+58 412 1234567",
+};
+
+describe("createCentroSchema", () => {
+  it("acepta un centro mínimo válido (items opcionales)", () => {
+    expect(createCentroSchema.safeParse(validCentro).success).toBe(true);
+  });
+
+  it("exige nombre y contacto del encargado", () => {
+    expect(
+      createCentroSchema.safeParse({ ...validCentro, name: "" }).success,
+    ).toBe(false);
+    expect(
+      createCentroSchema.safeParse({ ...validCentro, encargadoPhone: "123" })
+        .success,
+    ).toBe(false);
+  });
+
+  it("acepta coordenadas internacionales (centros de la diáspora)", () => {
+    const r = createCentroSchema.safeParse({
+      ...validCentro,
+      latitude: 40.4, // Madrid
+      longitude: -3.7,
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rechaza coordenadas geográficamente imposibles", () => {
+    const r = createCentroSchema.safeParse({
+      ...validCentro,
+      latitude: 200,
+      longitude: -3.7,
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("acepta items con supplyType y level", () => {
+    const r = createCentroSchema.safeParse({
+      ...validCentro,
+      items: [{ supplyType: "AGUA", level: "URGENTE" }],
+    });
+    expect(r.success).toBe(true);
+  });
+});
+
+describe("updateCentroSchema", () => {
+  it("rechaza un objeto vacío", () => {
+    expect(updateCentroSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("permite actualizar solo el horario", () => {
+    expect(
+      updateCentroSchema.safeParse({ horario: "Lun–Vie 9am–5pm" }).success,
+    ).toBe(true);
+  });
+
+  it("exige latitud y longitud juntas", () => {
+    expect(updateCentroSchema.safeParse({ latitude: 10.25 }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("updateCentroItemsSchema", () => {
+  it("exige al menos un ítem", () => {
+    expect(updateCentroItemsSchema.safeParse({ items: [] }).success).toBe(false);
+  });
+
+  it("acepta una lista de niveles", () => {
+    const r = updateCentroItemsSchema.safeParse({
+      items: [
+        { supplyType: "AGUA", level: "SUFICIENTE" },
+        { supplyType: "ROPA", level: "SOBRADO" },
+      ],
+    });
+    expect(r.success).toBe(true);
   });
 });
