@@ -80,8 +80,29 @@ publicV1
   .doc31("/docs", {
     openapi: "3.1.0",
     info: {
-      title: "Unidos Venezuela API",
+      title: "Unidos Venezuela — API de respuesta al terremoto",
       version: "1.0.0",
+      description:
+        "API pública de la plataforma **Unidos Venezuela** para la coordinación ciudadana de ayuda " +
+        "tras los **terremotos del 24 de junio de 2026**, un doblete sísmico de magnitud 7.2 y 7.5 Mw " +
+        "con epicentro entre San Felipe (Yaracuy) y Yumare/Montalbán (Carabobo), al norte de Venezuela.\n\n" +
+        "El sismo —el más fuerte en el país en más de un siglo— dejó más de 1 700 fallecidos, " +
+        "5 000 heridos, 50 000 desaparecidos y daños estimados en $6 700 millones. " +
+        "Los estados más afectados son Yaracuy, Carabobo, Falcón, Miranda y La Guaira, " +
+        "con afectaciones severas en Maracay, Valencia, Caracas y el Aeropuerto Internacional de Maiquetía.\n\n" +
+        "Esta API permite consultar solicitudes de ayuda georreferenciadas — rescate, atención médica, " +
+        "agua, comida, refugio — con filtros por ubicación, urgencia, accesibilidad y estado. " +
+        "Todos los endpoints son de solo lectura y no requieren autenticación.\n\n" +
+        "Los datos expuestos están sanitizados: nunca se incluye información de contacto " +
+        "ni datos personales de los solicitantes.",
+      contact: {
+        name: "Kadent Studio",
+        email: "kadentstudio@gmail.com",
+      },
+      license: {
+        name: "MIT",
+        url: "https://opensource.org/licenses/MIT",
+      },
     },
     servers: [
       {
@@ -89,5 +110,26 @@ publicV1
         description: "API pública de Unidos Venezuela",
       },
     ],
+    tags: [
+      {
+        name: "Reportes",
+        description:
+          "Solicitudes de ayuda en las zonas afectadas: consultar, listar y buscar por proximidad geográfica",
+      },
+      {
+        name: "Estadísticas",
+        description:
+          "Conteos agregados de la respuesta: total de reportes activos, críticos, en atención, verificados y desglose por urgencia",
+      },
+    ],
   })
-  .get("/ui", swaggerUI({ url: "/api/v1/docs" }));
+  .get(
+    "/ui",
+    swaggerUI({
+      url: "/api/v1/docs",
+      docExpansion: "list",
+      defaultModelsExpandDepth: 2,
+      filter: true,
+      tryItOutEnabled: true,
+    }),
+  );

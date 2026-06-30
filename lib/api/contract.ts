@@ -84,6 +84,11 @@ const GetReportParams = z
 export const getReportContract = createRoute({
   method: "get",
   path: "/reports/{id}",
+  tags: ["Reportes"],
+  summary: "Obtener un reporte",
+  description:
+    "Devuelve los datos completos de un reporte por su ID. Los reportes descartados no se retornan.",
+  operationId: "getReport",
   request: {
     params: GetReportParams,
   },
@@ -128,6 +133,11 @@ export const ListReportsQuerySchema = z
 export const listReportsContract = createRoute({
   method: "get",
   path: "/reports",
+  tags: ["Reportes"],
+  summary: "Listar reportes",
+  description:
+    "Listado paginado de reportes con filtros opcionales por tipo de necesidad, urgencia, acceso, etapa y ubicación geográfica. Se excluyen los reportes descartados por defecto.",
+  operationId: "listReports",
   request: {
     query: ListReportsQuerySchema,
   },
@@ -174,6 +184,11 @@ export type NearbyQuery = z.infer<typeof NearbyQuerySchema>;
 export const nearbyContract = createRoute({
   method: "get",
   path: "/reports/nearby",
+  tags: ["Reportes"],
+  summary: "Buscar reportes cercanos",
+  description:
+    "Sugeridor de duplicados: devuelve reportes cercanos a una coordenada ordenados por distancia. Útil para detectar si ya existe una solicitud similar en la misma zona antes de crear una nueva.",
+  operationId: "getNearbyReports",
   request: {
     query: NearbyQuerySchema,
   },
@@ -217,6 +232,11 @@ export const StatsResponseSchema = z
 export const statsContract = createRoute({
   method: "get",
   path: "/reports/stats",
+  tags: ["Estadísticas"],
+  summary: "Estadísticas agregadas",
+  description:
+    "Devuelve conteos agregados: total de reportes activos, críticos, en atención, verificados y desglose por nivel de urgencia. No incluye reportes descartados.",
+  operationId: "getStats",
   responses: {
     200: {
       content: { "application/json": { schema: StatsResponseSchema } },
