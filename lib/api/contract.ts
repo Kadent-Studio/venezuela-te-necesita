@@ -24,6 +24,14 @@ const DiscardReason = z
   .enum(["DUPLICADO", "FALSO", "FUERA_DE_ALCANCE"])
   .openapi("DiscardReason");
 
+const ErrorResponseSchema = z
+  .object({ error: z.string() })
+  .openapi("ErrorResponse");
+
+const ValidationErrorResponseSchema = z
+  .object({ error: z.string(), details: z.array(z.unknown()).nullish() })
+  .openapi("ValidationErrorResponse");
+
 export const Report = z
   .object({
     id: z.string(),
@@ -87,7 +95,7 @@ export const getReportContract = createRoute({
     404: {
       content: {
         "application/json": {
-          schema: z.object({ error: z.string() }),
+          schema: ErrorResponseSchema,
         },
       },
       description: "Reporte no encontrado",
@@ -131,7 +139,7 @@ export const listReportsContract = createRoute({
     400: {
       content: {
         "application/json": {
-          schema: z.object({ error: z.string(), details: z.unknown() }),
+          schema: ValidationErrorResponseSchema,
         },
       },
       description: "Parámetros inválidos",
@@ -177,7 +185,7 @@ export const nearbyContract = createRoute({
     400: {
       content: {
         "application/json": {
-          schema: z.object({ error: z.string(), details: z.unknown() }),
+          schema: ValidationErrorResponseSchema,
         },
       },
       description: "Parámetros inválidos",

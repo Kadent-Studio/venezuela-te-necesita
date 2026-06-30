@@ -32,9 +32,7 @@ export async function getReportById(
 // Listar reportes (paginado, con filtros opcionales)
 // ---------------------------------------------------------------------------
 
-export async function listReports(
-  params: ListQuery,
-): Promise<ServiceResult<PaginatedReports>> {
+export async function listReports(params: ListQuery) {
   const { needType, urgency, access, stage, cursor, limit, lat, lng, radius } =
     params;
 
@@ -80,7 +78,10 @@ export async function listReports(
   const items = hasMore ? rows.slice(0, limit) : rows;
   const nextCursor = hasMore ? items[items.length - 1].id : null;
 
-  return { ok: true, data: { items: toPublicReports(items), nextCursor } };
+  return {
+    ok: true,
+    data: { items: toPublicReports(items), nextCursor },
+  } as const;
 }
 
 // ---------------------------------------------------------------------------

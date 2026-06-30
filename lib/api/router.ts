@@ -7,6 +7,7 @@ import {
 import { swaggerUI } from "@hono/swagger-ui";
 import { defineOpenAPIRoute, OpenAPIHono } from "@hono/zod-openapi";
 import { cors } from "hono/cors";
+import { getBaseUrl } from "../url";
 import {
   getReportContract,
   listReportsContract,
@@ -33,12 +34,6 @@ export const listReportsRoute = defineOpenAPIRoute({
   async handler(c) {
     const query = c.req.valid("query");
     const result = await listReports(query);
-    if (!result.ok) {
-      return c.json(
-        { error: result.error, details: null },
-        result.status as 400,
-      );
-    }
     return c.json(result.data, 200);
   },
 });
@@ -50,10 +45,7 @@ export const nearbyRoute = defineOpenAPIRoute({
     const query = c.req.valid("query");
     const result = await getNearbyReports(query);
     if (!result.ok) {
-      return c.json(
-        { error: result.error, details: null },
-        result.status as 400,
-      );
+      return c.json({ error: result.error, details: null }, 400);
     }
     return c.json({ items: result.data }, 200);
   },
@@ -82,6 +74,8 @@ export const publicV1 = route.openapiRoutes([
   nearbyRoute,
 ]);
 
+const apiUrl = `${getBaseUrl()}/api/v1`;
+
 publicV1
   .doc31("/docs", {
     openapi: "3.1.0",
@@ -89,5 +83,11 @@ publicV1
       title: "Unidos Venezuela API",
       version: "1.0.0",
     },
+    servers: [
+      {
+        url: apiUrl,
+        description: "API pública de Unidos Venezuela",
+      },
+    ],
   })
   .get("/ui", swaggerUI({ url: "/api/v1/docs" }));
