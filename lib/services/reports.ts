@@ -4,7 +4,7 @@ import type { PublicReport } from "@/lib/serialize";
 import { toPublicReport, toPublicReports } from "@/lib/serialize";
 import type { StatsResponse } from "@/lib/types";
 import { Prisma, Stage, Urgency } from "@prisma/client";
-import { NearbyQuery, NearbyReportItem } from "../api/contract";
+import { NearbyQuery, NearbyReportItem, GeoJSONQuery } from "../api/contract";
 import { ServiceResult } from "./lib";
 
 export interface PaginatedReports {
@@ -160,6 +160,98 @@ export async function getStats(): Promise<ServiceResult<StatsResponse>> {
         MEDIA: urgencyMap.MEDIA ?? 0,
         BAJA: urgencyMap.BAJA ?? 0,
       },
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// GeoJSON — FeatureCollection de reportes para GIS y mapas
+// ---------------------------------------------------------------------------
+
+export interface GeoJSONFeatureCollection {
+  type: "FeatureCollection";
+  features: GeoJSONFeature[];
+}
+
+export interface GeoJSONFeature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [number, number];
+  };
+  properties: Record<string, unknown>;
+  id: string;
+}
+
+export async function getReportsGeoJSON(
+  params: GeoJSONQuery,
+): Promise<ServiceResult<GeoJSONFeatureCollection>> {
+  const { needType, urgency, access, stage, lat, lng, radius, limit } = params;
+
+  let rows;
+
+  if (lat != null && lng != null) {
+    const result = await prisma.report.findByRadius({
+      lat,
+      lng,
+      radius,
+      needType,
+      urgency,
+      access,
+      stage,
+      limit,
+    });
+    rows = result.items;
+  } else {
+    const where: Prisma.ReportWhereInput = {
+      stage:
+        stage && stage !== Stage.DESCARTADO ? stage : { not: Stage.DESCARTADO },
+      ...(needType ? { needTypes: { has: needType } } : {}),
+      ...(urgency ? { urgency } : {}),
+      ...(access ? { access } : {}),
+    };
+
+    rows = await prisma.report.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit,
+    });
+  }
+
+  const features: GeoJSONFeature[] = rows.map((r) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { contactName, contactPhone, ipHash, ...props } =
+      r as unknown as Record<string, unknown>;
+    return {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [r.longitude, r.latitude],
+      },
+      properties: {
+        ...props,
+        createdAt:
+          props.createdAt instanceof Date
+            ? (props.createdAt as Date).toISOString()
+            : props.createdAt,
+        updatedAt:
+          props.updatedAt instanceof Date
+            ? (props.updatedAt as Date).toISOString()
+            : props.updatedAt,
+        verifiedAt:
+          props.verifiedAt instanceof Date
+            ? (props.verifiedAt as Date).toISOString()
+            : props.verifiedAt,
+      },
+      id: r.id,
+    };
+  });
+
+  return {
+    ok: true,
+    data: {
+      type: "FeatureCollection",
+      features,
     },
   };
 }

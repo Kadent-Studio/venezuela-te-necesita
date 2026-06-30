@@ -395,3 +395,78 @@ export const listCentrosContract = createRoute({
     },
   },
 });
+
+// ---------------------------------------------------------------------------
+// GET /reports/geojson — colección GeoJSON de reportes
+// ---------------------------------------------------------------------------
+
+const GeoJSONPoint = z
+  .object({
+    type: z.literal("Point"),
+    coordinates: z.tuple([z.number(), z.number()]),
+  })
+  .openapi("GeoJSONPoint");
+
+const GeoJSONFeature = z
+  .object({
+    type: z.literal("Feature"),
+    geometry: GeoJSONPoint,
+    properties: z.record(z.string(), z.unknown()),
+    id: z.string(),
+  })
+  .openapi("GeoJSONFeature");
+
+const GeoJSONFeatureCollection = z
+  .object({
+    type: z.literal("FeatureCollection"),
+    features: z.array(GeoJSONFeature),
+  })
+  .openapi("GeoJSONFeatureCollection");
+
+export const GeoJSONQuerySchema = z
+  .object({
+    needType: NeedType.optional(),
+    urgency: Urgency.optional(),
+    access: AccessStatus.optional(),
+    stage: Stage.optional(),
+    limit: z.coerce.number().int().min(1).max(500).default(100),
+    lat: z.coerce.number().optional(),
+    lng: z.coerce.number().optional(),
+    radius: z.coerce.number().min(10).max(50000).default(5000),
+  })
+  .refine(
+    (v) => (v.lat == null && v.lng == null) || (v.lat != null && v.lng != null),
+    { message: "Indica lat y lng para filtrar por zona" },
+  )
+  .openapi("GeoJSONQuery");
+
+export type GeoJSONQuery = z.infer<typeof GeoJSONQuerySchema>;
+
+export const geojsonContract = createRoute({
+  method: "get",
+  path: "/reports/geojson",
+  tags: ["Reportes"],
+  summary: "Exportar reportes como GeoJSON",
+  description:
+    "Devuelve los reportes activos en formato GeoJSON FeatureCollection. " +
+    "Cada feature contiene la geometría Point y las propiedades del reporte " +
+    "sin datos de contacto. Compatible con GIS, mapas web y herramientas de visualización.",
+  operationId: "getReportsGeoJSON",
+  request: {
+    query: GeoJSONQuerySchema,
+  },
+  responses: {
+    200: {
+      content: { "application/geo+json": { schema: GeoJSONFeatureCollection } },
+      description: "Colección GeoJSON de reportes",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: ValidationErrorResponseSchema,
+        },
+      },
+      description: "Parámetros inválidos",
+    },
+  },
+});

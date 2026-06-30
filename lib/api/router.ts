@@ -2,6 +2,7 @@ import { getCentroById, listCentros } from "@/lib/services/centros";
 import {
   getNearbyReports,
   getReportById,
+  getReportsGeoJSON,
   getStats,
   listReports,
 } from "@/lib/services/reports";
@@ -11,6 +12,7 @@ import { cors } from "hono/cors";
 import { getBaseUrl } from "../url";
 import {
   getCentroContract,
+  geojsonContract,
   getReportContract,
   listCentrosContract,
   listReportsContract,
@@ -94,6 +96,18 @@ export const listCentrosRoute = defineOpenAPIRoute({
     return c.json(result.data, 200);
   },
 });
+// GET /reports/geojson — FeatureCollection GeoJSON
+export const geojsonRoute = defineOpenAPIRoute({
+  route: geojsonContract,
+  async handler(c) {
+    const query = c.req.valid("query");
+    const result = await getReportsGeoJSON(query);
+    if (!result.ok) {
+      return c.json({ error: result.error }, 400);
+    }
+    return c.json(result.data, 200);
+  },
+});
 
 const route = new OpenAPIHono();
 
@@ -101,6 +115,7 @@ route.use(cors({ origin: "*" }));
 
 export const publicV1 = route.openapiRoutes([
   statsRoute,
+  geojsonRoute,
   getReportRoute,
   listReportsRoute,
   nearbyRoute,
@@ -126,9 +141,7 @@ publicV1
         "con afectaciones severas en Maracay, Valencia, Caracas y el Aeropuerto Internacional de Maiquetía.\n\n" +
         "Esta API permite consultar solicitudes de ayuda georreferenciadas — rescate, atención médica, " +
         "agua, comida, refugio — con filtros por ubicación, urgencia, accesibilidad y estado. " +
-        "Todos los endpoints son de solo lectura y no requieren autenticación.\n\n" +
-        "Los datos expuestos están sanitizados: nunca se incluye información de contacto " +
-        "ni datos personales de los solicitantes.",
+        "Todos los endpoints son de solo lectura y no requieren autenticación.",
       contact: {
         name: "Kadent Studio",
         email: "kadentstudio@gmail.com",
